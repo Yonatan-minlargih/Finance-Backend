@@ -1,0 +1,55 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: transactional-service
+  config:
+    import: optional:configserver:${CONFIG_SERVER_BASE_URL:http://localhost:8888}
+
+  cloud:
+    config:
+      enabled: ${CONFIG_SERVER_ENABLED:false}
+    discovery:
+      enabled: ${DISCOVERY_ENABLED:false}
+
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/transactional_db}?createDatabaseIfNotExist=true
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:mysql}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update # For dev purposes. In prod, use liquibase/flyway and set to validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  rabbitmq:
+    dynamic: ${RABBITMQ_DYNAMIC:false}
+
+eureka:
+  client:
+    enabled: ${EUREKA_CLIENT_ENABLED:false}
+
+transactional:
+  security:
+    enabled: ${TRANSACTIONAL_SECURITY_ENABLED:false}
+
+# Core Finance Integration
+core-finance:
+  enabled: ${CORE_FINANCE_ENABLED:false}
+  url: ${CORE_FINANCE_URL:http://localhost:8081}
+
+keycloak:
+  openIdConnectUrl: ${KEYCLOAK_OPENID_CONNECT_URL:http://localhost:8080/realms/saas/.well-known/openid-configuration}
+
+rabbitmq:
+  transactional-events-exchange: transactional-exchange
+  invoice-approved-queue: invoice-approved-queue
+  payment-posted-queue: payment-posted-queue
+  publish-transactional-events-job-cron: "*/30 * * * * *"
+
+api-gateway-base-url: ${API_GATEWAY_BASE_URL:http://localhost:8080}

@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  transactional-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8082"
+    environment:
+      - DB_URL=jdbc:mysql://transactional-db:3306/transactional_db
+      - DB_USERNAME=finance_user
+      - DB_PASSWORD=finance_pass
+      - CONFIG_SERVER_ENABLED=false
+      - DISCOVERY_ENABLED=false
+      - EUREKA_CLIENT_ENABLED=false
+      - TRANSACTIONAL_SECURITY_ENABLED=false
+      - CORE_FINANCE_ENABLED=false
+      - RABBITMQ_DYNAMIC=false
+      - CORE_FINANCE_URL=http://core-finance-service:8081
+    depends_on:
+      transactional-db:
+        condition: service_healthy
+    networks:
+      - finance-network
+
+  transactional-db:
+    image: mysql:8.0
+    ports:
+      - "3307:3306"
+    environment:
+      - MYSQL_DATABASE=transactional_db
+      - MYSQL_USER=finance_user
+      - MYSQL_PASSWORD=finance_pass
+      - MYSQL_ROOT_PASSWORD=root
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+    networks:
+      - finance-network
+
+networks:
+  finance-network:
+    driver: bridge
