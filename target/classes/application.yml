@@ -1,0 +1,177 @@
+server:
+  port: 8081
+  servlet:
+    context-path: /core-finance-service
+
+spring:
+  application:
+    name: core-finance-service
+  
+  profiles:
+    active: dev
+  
+  datasource:
+    url: jdbc:mysql://localhost:3306/core_finance?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:Kaleabdak12$}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
+      max-lifetime: 1200000
+      leak-detection-threshold: 60000
+      auto-commit: false
+  
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+        use_sql_comments: true
+        jdbc:
+          batch_size: 50
+          batch_versioned_data: true
+        connection:
+          provider_disables_autocommit: true
+
+  jackson:
+    default-property-inclusion: NON_NULL
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: UTC
+    serialization:
+      write-dates-as-timestamps: false
+    mapper:
+      accept-case-insensitive-enums: true
+    deserialization:
+      fail-on-unknown-properties: false
+      fail-on-null-for-primitives: false
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    virtual-host: ${RABBITMQ_VHOST:/}
+    publisher-confirms: true
+    publisher-returns: true
+    template:
+      retry:
+        enabled: true
+        initial-interval: 1000
+        max-attempts: 3
+        max-interval: 10000
+        multiplier: 2
+
+  task:
+    execution:
+      pool:
+        core-size: 5
+        max-size: 20
+        queue-capacity: 100
+        thread-name-prefix: finance-async-
+        allow-core-thread-timeout: true
+        keep-alive-seconds: 60
+        shutdown:
+          await-termination: true
+          await-termination-period: 60s
+
+  scheduling:
+    pool:
+      size: 3
+    thread-name-prefix: finance-scheduled-
+    shutdown:
+      await-termination: true
+      await-termination-period: 60s
+
+# Custom RabbitMQ Queue Names
+rabbitmq:
+  financeEventsExchange: finance.events.exchange
+  createJournalQueue: finance.create.journal.queue
+  updateJournalQueue: finance.update.journal.queue
+  deleteJournalQueue: finance.delete.journal.queue
+  createAccountQueue: finance.create.account.queue
+  updateAccountQueue: finance.update.account.queue
+  deleteAccountQueue: finance.delete.account.queue
+  createBudgetQueue: finance.create.budget.queue
+  updateBudgetQueue: finance.update.budget.queue
+  createFiscalYearQueue: finance.create.fiscal-year.queue
+  closeFiscalYearQueue: finance.close.fiscal-year.queue
+  generateReportQueue: finance.generate.report.queue
+
+# ================================
+# SERVICE DISCOVERY (EUREKA)
+# ================================
+eureka:
+  client:
+    enabled: false
+    register-with-eureka: false
+    fetch-registry: false
+
+# 👉 AFTER TEAM SETS UP EUREKA SERVER:
+# Replace the above with:
+#
+# eureka:
+#   client:
+#     service-url:
+#       defaultZone: http://<eureka-server>:8761/eureka
+#     register-with-eureka: true
+#     fetch-registry: true
+#   instance:
+#     prefer-ip-address: true
+#     lease-renewal-interval-in-seconds: 30
+#     lease-expiration-duration-in-seconds: 90
+
+# Feign Clients
+feign:
+  client:
+    config:
+      default:
+        connectTimeout: 5000
+        readTimeout: 10000
+        loggerLevel: basic
+  httpclient:
+    enabled: true
+    max-connections: 200
+    max-connections-per-route: 50
+
+# External Service URLs
+employee:
+  service:
+    url: ${EMPLOYEE_SERVICE_URL:http://localhost:8080/employee-service}
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+
+# JWT
+jwt:
+  secret: ${JWT_SECRET:mySuperSecretKeyForJWTTokenGeneration}
+  expiration: 86400
+
+# Multi-tenancy
+multitenancy:
+  default-tenant: default
+  header: X-Tenant-ID
+
+# Logging
+logging:
+  level:
+    com.financial.corefinance: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+  file:
+    name: logs/core-finance-service.log
