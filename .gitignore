@@ -1,0 +1,76 @@
+# Environment variables and secrets
+.env
+.env.local
+.env.development
+.env.production
+.env.*
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Log files
+*.log
+logs/
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Java/Maven
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.iml
+.classpath
+.project
+.settings/
+.mvn/
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# Spring Boot
+application-*.properties
+application-*.yml
+!application.properties
+!application.yml
+
+# Docker
+.dockerignore
+
+# Temporary files
+*.tmp
+*.temp
+*.cache
+
+# Node.js (if any frontend components)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Backup files
+*.bak
+*.backup
+*.orig
+
+# Generated configuration files
+generated-configs/
+secrets/

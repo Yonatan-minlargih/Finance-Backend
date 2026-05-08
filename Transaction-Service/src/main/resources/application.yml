@@ -14,9 +14,9 @@ spring:
       enabled: ${DISCOVERY_ENABLED:false}
 
   datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3306/transactional_db}?createDatabaseIfNotExist=true
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:mysql}
+    url: ${TRANSACTION_DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
@@ -28,7 +28,19 @@ spring:
         format_sql: true
 
   rabbitmq:
-    dynamic: ${RABBITMQ_DYNAMIC:false}
+    host: ${RABBITMQ_HOST}
+    port: ${RABBITMQ_PORT}
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
+    dynamic: ${RABBITMQ_DYNAMIC}
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI}
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI}
+          audiences: ${KEYCLOAK_AUDIENCES}
 
 eureka:
   client:
@@ -44,7 +56,10 @@ core-finance:
   url: ${CORE_FINANCE_URL:http://localhost:8081}
 
 keycloak:
-  openIdConnectUrl: ${KEYCLOAK_OPENID_CONNECT_URL:http://localhost:8080/realms/saas/.well-known/openid-configuration}
+  server-url: ${KEYCLOAK_SERVER_URL}
+  realm: ${KEYCLOAK_REALM}
+  client-id: ${TRANSACTION_CLIENT_ID}
+  client-secret: ${TRANSACTION_CLIENT_SECRET}
 
 rabbitmq:
   transactional-events-exchange: transactional-exchange
