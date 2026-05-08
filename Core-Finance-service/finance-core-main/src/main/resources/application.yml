@@ -1,0 +1,87 @@
+server:
+  port: ${SERVER_PORT:8081}
+  servlet:
+    context-path: /core-finance-service
+
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/master
+  datasource:
+    url: jdbc:mysql://localhost:3306/core_finance
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:Kaleabdak12$}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: ${DDL_AUTO:update}
+    show-sql: false
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    virtual-host: ${RABBITMQ_VHOST:/}
+
+rabbitmq:
+  financeEventsExchange: finance.events.exchange
+  createJournalQueue: finance.create.journal.queue
+  updateJournalQueue: finance.update.journal.queue
+  deleteJournalQueue: finance.delete.journal.queue
+  createAccountQueue: finance.create.account.queue
+  updateAccountQueue: finance.update.account.queue
+  deleteAccountQueue: finance.delete.account.queue
+  createBudgetQueue: finance.create.budget.queue
+  updateBudgetQueue: finance.update.budget.queue
+  createFiscalYearQueue: finance.create.fiscal-year.queue
+  closeFiscalYearQueue: finance.close.fiscal-year.queue
+  generateReportQueue: finance.generate.report.queue
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+
+#keycloak:
+ # server-url: ${KEYCLOAK_SERVER_URL}
+ # realm: ${KEYCLOAK_REALM}
+ # client-id: ${KEYCLOAK_CLIENT_ID:core-finance-service}
+ # client-secret: ${KEYCLOAK_CLIENT_SECRET}
+
+services:
+  transactional:
+    url: ${TRANSACTIONAL_SERVICE_URL:http://localhost:8082/transactional-service}
+  costing:
+    url: ${COSTING_SERVICE_URL:http://localhost:8083/costing-service}
+  payroll:
+    url: ${PAYROLL_SERVICE_URL:http://localhost:8084/payroll-service}
+
+integration:
+  contract-version: ${INTEGRATION_CONTRACT_VERSION:v1}
+
+multitenancy:
+  header: X-Tenant-ID
+
+logging:
+  level:
+    com.financial.corefinance: ${APP_LOG_LEVEL:INFO}
+    org.springframework.security: WARN
+
+
+#####  for testing
+keycloak:
+  server-url: http://localhost:8080
+  realm: master
+  client-id: core-finance-service
+  client-secret: test-secret
+
+
+KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/master
