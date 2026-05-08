@@ -14,7 +14,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class OpenApiConfig {
 
-    @Value("${keycloak.openIdConnectUrl}")
+    @Value("${KEYCLOAK_ISSUER_URI}")
     private String keycloakOpenIdConnectUrl;
 
     @Value("${api-gateway-base-url}")

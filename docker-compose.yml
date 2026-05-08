@@ -1,0 +1,97 @@
+version: '3.9'
+
+services:
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-global
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "${MYSQL_EXTERNAL_PORT}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - app-network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - "${RABBITMQ_EXTERNAL_PORT}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT}:15672"
+    networks:
+      - app-network
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: keycloak
+    command: start-dev
+    restart: always
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USERNAME}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+    ports:
+      - "${KEYCLOAK_EXTERNAL_PORT}:8080"
+    volumes:
+      - keycloak_data:/opt/keycloak/data/h2files
+    networks:
+      - app-network
+
+  payroll-service:
+    build:
+      context: ./payroll-service
+    container_name: payroll-service
+    restart: always
+    ports:
+      - "${PAYROLL_SERVICE_PORT}:8080"
+    env_file:
+      - .env
+    depends_on:
+      - mysql
+      - rabbitmq
+      - keycloak
+    networks:
+      - app-network
+
+  cost-service:
+    build:
+      context: ./cost-service
+    container_name: cost-service
+    restart: always
+    ports:
+      - "${COST_SERVICE_PORT}:8080"
+    env_file:
+      - .env
+    depends_on:
+      - mysql
+      - rabbitmq
+      - keycloak
+    networks:
+      - app-network
+
+  transaction-service:
+    build:
+      context: ./transaction-service
+    container_name: transaction-service
+    restart: always
+    ports:
+      - "${TRANSACTION_SERVICE_PORT}:8080"
+    env_file:
+      - .env
+    depends_on:
+      - mysql
+      - rabbitmq
+      - keycloak
+    networks:
+      - app-network
+
+networks:
+  app-network:
+
+volumes:
+  mysql_data:
+  keycloak_data:

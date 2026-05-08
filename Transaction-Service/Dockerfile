@@ -15,7 +15,7 @@ WORKDIR /app
 
 COPY --from=builder /build/target/transactional-service-0.0.1-SNAPSHOT.jar app.jar
 
-ENV SERVER_PORT=8082
-EXPOSE 8082
+ENV SERVER_PORT=8080
+EXPOSE 8080
 
 ENTRYPOINT ["java","-jar","/app/app.jar"]
