@@ -14,7 +14,7 @@ import java.time.Instant;
 @Slf4j
 public class TransactionalEventPublishingJob {
 
-    @Scheduled(cron = "${rabbitmq.publish-transactional-events-job-cron}")
+    @Scheduled(cron = "${spring.rabbitmq.custom.publish-transactional-events-job-cron}")
     @SchedulerLock(name = "publishTransactionalEvents")
     public void publish() {
         LockAssert.assertLocked();

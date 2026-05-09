@@ -22,13 +22,16 @@ public class OpenApiConfig {
 
     @Value("${server.port}")
     private String serverPort;
+    
+    @Value("${TRANSACTION_SERVICE_PORT:8083}")
+    private String externalPort;
 
     @Value("${spring.application.name}")
     private String applicationName;
 
     @Bean
     public OpenAPI customOpenAPI() {
-        String localhostUrl = "http://localhost:" + this.serverPort;
+        String localhostUrl = "http://localhost:" + this.externalPort;
         String applicationName = this.capitalizeApplicationName(this.applicationName);
 
         return new OpenAPI()
@@ -48,11 +51,10 @@ public class OpenApiConfig {
                 .schemaRequirement(
                         "Keycloak",
                         new SecurityScheme()
-                                .type(SecurityScheme.Type.OPENIDCONNECT)
+                                .type(SecurityScheme.Type.HTTP)
                                 .scheme("bearer")
                                 .bearerFormat("JWT")
-                                .in(SecurityScheme.In.HEADER)
-                                .openIdConnectUrl(keycloakOpenIdConnectUrl));
+                                .in(SecurityScheme.In.HEADER));
     }
 
     private String capitalizeApplicationName(String applicationName) {

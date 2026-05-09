@@ -3,6 +3,7 @@ package com.finance.transactional.service;
 import com.finance.transactional.dto.VendorDto;
 import com.finance.transactional.exception.ResourceNotFoundException;
 import com.finance.transactional.model.ap.Vendor;
+import com.finance.transactional.event.DomainEventPublisher;
 import com.finance.transactional.mapper.VendorMapper;
 import com.finance.transactional.repository.VendorRepository;
 import java.util.List;
@@ -17,13 +18,19 @@ public class VendorService {
 
     private final VendorRepository repository;
     private final VendorMapper mapper;
+    private final DomainEventPublisher domainEventPublisher;
 
     @Transactional
     public VendorDto createVendor(UUID tenantId, VendorDto dto) {
         Vendor vendor = mapper.toEntity(dto);
         vendor.setTenantId(tenantId);
         Vendor saved = repository.save(vendor);
-        return mapper.toDto(saved);
+        VendorDto resultDto = mapper.toDto(saved);
+
+        // Publish event
+        domainEventPublisher.publish("vendor-created", resultDto);
+
+        return resultDto;
     }
 
     @Transactional

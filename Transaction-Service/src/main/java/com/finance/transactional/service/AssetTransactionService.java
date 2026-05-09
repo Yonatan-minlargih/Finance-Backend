@@ -3,6 +3,7 @@ package com.finance.transactional.service;
 import com.finance.transactional.dto.AssetTransactionDto;
 import com.finance.transactional.exception.ResourceNotFoundException;
 import com.finance.transactional.model.asset.AssetTransaction;
+import com.finance.transactional.event.DomainEventPublisher;
 import com.finance.transactional.mapper.AssetTransactionMapper;
 import com.finance.transactional.repository.AssetTransactionRepository;
 import java.util.List;
@@ -17,13 +18,19 @@ public class AssetTransactionService {
 
     private final AssetTransactionRepository repository;
     private final AssetTransactionMapper mapper;
+    private final DomainEventPublisher domainEventPublisher;
 
     @Transactional
     public AssetTransactionDto createAssetTransaction(UUID tenantId, AssetTransactionDto dto) {
         AssetTransaction assetTransaction = mapper.toEntity(dto);
         assetTransaction.setTenantId(tenantId);
         AssetTransaction saved = repository.save(assetTransaction);
-        return mapper.toDto(saved);
+        AssetTransactionDto resultDto = mapper.toDto(saved);
+
+        // Publish event
+        domainEventPublisher.publish("asset-transaction-created", resultDto);
+
+        return resultDto;
     }
 
     @Transactional

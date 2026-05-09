@@ -3,6 +3,7 @@ package com.finance.transactional.service;
 import com.finance.transactional.dto.PaymentDto;
 import com.finance.transactional.exception.ResourceNotFoundException;
 import com.finance.transactional.model.ap.Payment;
+import com.finance.transactional.event.DomainEventPublisher;
 import com.finance.transactional.mapper.PaymentMapper;
 import com.finance.transactional.repository.PaymentRepository;
 import java.util.List;
@@ -17,13 +18,19 @@ public class PaymentService {
 
     private final PaymentRepository repository;
     private final PaymentMapper mapper;
+    private final DomainEventPublisher domainEventPublisher;
 
     @Transactional
     public PaymentDto createPayment(UUID tenantId, PaymentDto dto) {
         Payment payment = mapper.toEntity(dto);
         payment.setTenantId(tenantId);
         Payment saved = repository.save(payment);
-        return mapper.toDto(saved);
+        PaymentDto resultDto = mapper.toDto(saved);
+
+        // Publish event
+        domainEventPublisher.publish("payment-posted", resultDto);
+
+        return resultDto;
     }
 
     @Transactional
