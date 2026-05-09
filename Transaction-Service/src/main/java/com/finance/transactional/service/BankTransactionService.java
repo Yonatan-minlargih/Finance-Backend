@@ -3,6 +3,7 @@ package com.finance.transactional.service;
 import com.finance.transactional.dto.BankTransactionDto;
 import com.finance.transactional.exception.ResourceNotFoundException;
 import com.finance.transactional.model.banking.BankTransaction;
+import com.finance.transactional.event.DomainEventPublisher;
 import com.finance.transactional.mapper.BankTransactionMapper;
 import com.finance.transactional.repository.BankTransactionRepository;
 import java.util.List;
@@ -17,13 +18,19 @@ public class BankTransactionService {
 
     private final BankTransactionRepository repository;
     private final BankTransactionMapper mapper;
+    private final DomainEventPublisher domainEventPublisher;
 
     @Transactional
     public BankTransactionDto createBankTransaction(UUID tenantId, BankTransactionDto dto) {
         BankTransaction bankTransaction = mapper.toEntity(dto);
         bankTransaction.setTenantId(tenantId);
         BankTransaction saved = repository.save(bankTransaction);
-        return mapper.toDto(saved);
+        BankTransactionDto resultDto = mapper.toDto(saved);
+
+        // Publish event
+        domainEventPublisher.publish("bank-transaction-created", resultDto);
+
+        return resultDto;
     }
 
     @Transactional
@@ -35,7 +42,12 @@ public class BankTransactionService {
         updated.setCreatedAt(existing.getCreatedAt());
         updated.setCreatedBy(existing.getCreatedBy());
         updated = repository.save(updated);
-        return mapper.toDto(updated);
+        BankTransactionDto resultDto = mapper.toDto(updated);
+
+        // Publish event
+        domainEventPublisher.publish("bank-transaction-updated", resultDto);
+
+        return resultDto;
     }
 
     @Transactional(readOnly = true)

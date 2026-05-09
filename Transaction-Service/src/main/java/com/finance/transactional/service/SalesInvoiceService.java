@@ -3,6 +3,7 @@ package com.finance.transactional.service;
 import com.finance.transactional.dto.SalesInvoiceDto;
 import com.finance.transactional.exception.ResourceNotFoundException;
 import com.finance.transactional.model.ar.SalesInvoice;
+import com.finance.transactional.event.DomainEventPublisher;
 import com.finance.transactional.mapper.SalesInvoiceMapper;
 import com.finance.transactional.repository.SalesInvoiceRepository;
 import java.util.List;
@@ -17,13 +18,19 @@ public class SalesInvoiceService {
 
     private final SalesInvoiceRepository repository;
     private final SalesInvoiceMapper mapper;
+    private final DomainEventPublisher domainEventPublisher;
 
     @Transactional
     public SalesInvoiceDto createSalesInvoice(UUID tenantId, SalesInvoiceDto dto) {
         SalesInvoice salesInvoice = mapper.toEntity(dto);
         salesInvoice.setTenantId(tenantId);
         SalesInvoice saved = repository.save(salesInvoice);
-        return mapper.toDto(saved);
+        SalesInvoiceDto resultDto = mapper.toDto(saved);
+
+        // Publish event
+        domainEventPublisher.publish("sales-invoice-created", resultDto);
+
+        return resultDto;
     }
 
     @Transactional

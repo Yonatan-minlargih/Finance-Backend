@@ -3,6 +3,7 @@ package com.finance.transactional.service;
 import com.finance.transactional.dto.ReceiptDto;
 import com.finance.transactional.exception.ResourceNotFoundException;
 import com.finance.transactional.model.ar.Receipt;
+import com.finance.transactional.event.DomainEventPublisher;
 import com.finance.transactional.mapper.ReceiptMapper;
 import com.finance.transactional.repository.ReceiptRepository;
 import java.util.List;
@@ -17,13 +18,19 @@ public class ReceiptService {
 
     private final ReceiptRepository repository;
     private final ReceiptMapper mapper;
+    private final DomainEventPublisher domainEventPublisher;
 
     @Transactional
     public ReceiptDto createReceipt(UUID tenantId, ReceiptDto dto) {
         Receipt receipt = mapper.toEntity(dto);
         receipt.setTenantId(tenantId);
         Receipt saved = repository.save(receipt);
-        return mapper.toDto(saved);
+        ReceiptDto resultDto = mapper.toDto(saved);
+
+        // Publish event
+        domainEventPublisher.publish("receipt-created", resultDto);
+
+        return resultDto;
     }
 
     @Transactional

@@ -4,6 +4,7 @@ import com.finance.transactional.dto.InvoiceDto;
 import com.finance.transactional.client.CoreFinanceClient;
 import com.finance.transactional.model.ap.Invoice;
 import com.finance.transactional.exception.ResourceNotFoundException;
+import com.finance.transactional.event.DomainEventPublisher;
 import com.finance.transactional.mapper.InvoiceMapper;
 import com.finance.transactional.repository.InvoiceRepository;
 
@@ -21,6 +22,7 @@ public class InvoiceService {
     private final InvoiceRepository invoiceRepository;
     private final InvoiceMapper invoiceMapper;
     private final CoreFinanceClient coreFinanceClient;
+    private final DomainEventPublisher domainEventPublisher;
 
     
     @Transactional
@@ -43,11 +45,15 @@ public class InvoiceService {
 
         invoice.setStatus(Invoice.InvoiceStatus.APPROVED);
         Invoice updated = invoiceRepository.save(invoice);
+        InvoiceDto resultDto = invoiceMapper.toDto(updated);
 
         // Integration moved to a dedicated client layer without changing behavior.
         coreFinanceClient.postInvoiceApprovalJournal(updated);
 
-        return invoiceMapper.toDto(updated);
+        // Publish event
+        domainEventPublisher.publish("invoice-approved", resultDto);
+
+        return resultDto;
     }
 
     

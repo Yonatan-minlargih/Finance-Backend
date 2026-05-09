@@ -3,6 +3,7 @@ package com.finance.transactional.service;
 import com.finance.transactional.dto.CustomerDto;
 import com.finance.transactional.exception.ResourceNotFoundException;
 import com.finance.transactional.model.ar.Customer;
+import com.finance.transactional.event.DomainEventPublisher;
 import com.finance.transactional.mapper.CustomerMapper;
 import com.finance.transactional.repository.CustomerRepository;
 import java.util.List;
@@ -17,13 +18,19 @@ public class CustomerService {
 
     private final CustomerRepository repository;
     private final CustomerMapper mapper;
+    private final DomainEventPublisher domainEventPublisher;
 
     @Transactional
     public CustomerDto createCustomer(UUID tenantId, CustomerDto dto) {
         Customer customer = mapper.toEntity(dto);
         customer.setTenantId(tenantId);
         Customer saved = repository.save(customer);
-        return mapper.toDto(saved);
+        CustomerDto resultDto = mapper.toDto(saved);
+
+        // Publish event
+        domainEventPublisher.publish("customer-created", resultDto);
+
+        return resultDto;
     }
 
     @Transactional

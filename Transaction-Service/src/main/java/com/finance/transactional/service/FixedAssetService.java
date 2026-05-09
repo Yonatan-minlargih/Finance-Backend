@@ -3,6 +3,7 @@ package com.finance.transactional.service;
 import com.finance.transactional.dto.FixedAssetDto;
 import com.finance.transactional.exception.ResourceNotFoundException;
 import com.finance.transactional.model.asset.FixedAsset;
+import com.finance.transactional.event.DomainEventPublisher;
 import com.finance.transactional.mapper.FixedAssetMapper;
 import com.finance.transactional.repository.FixedAssetRepository;
 import java.util.List;
@@ -17,13 +18,19 @@ public class FixedAssetService {
 
     private final FixedAssetRepository repository;
     private final FixedAssetMapper mapper;
+    private final DomainEventPublisher domainEventPublisher;
 
     @Transactional
     public FixedAssetDto createFixedAsset(UUID tenantId, FixedAssetDto dto) {
         FixedAsset fixedAsset = mapper.toEntity(dto);
         fixedAsset.setTenantId(tenantId);
         FixedAsset saved = repository.save(fixedAsset);
-        return mapper.toDto(saved);
+        FixedAssetDto resultDto = mapper.toDto(saved);
+
+        // Publish event
+        domainEventPublisher.publish("fixed-asset-created", resultDto);
+
+        return resultDto;
     }
 
     @Transactional

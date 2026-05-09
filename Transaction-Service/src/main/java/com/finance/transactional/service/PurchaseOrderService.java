@@ -3,6 +3,7 @@ package com.finance.transactional.service;
 import com.finance.transactional.dto.PurchaseOrderDto;
 import com.finance.transactional.exception.ResourceNotFoundException;
 import com.finance.transactional.model.ap.PurchaseOrder;
+import com.finance.transactional.event.DomainEventPublisher;
 import com.finance.transactional.mapper.PurchaseOrderMapper;
 import com.finance.transactional.repository.PurchaseOrderRepository;
 import java.util.List;
@@ -17,13 +18,19 @@ public class PurchaseOrderService {
 
     private final PurchaseOrderRepository repository;
     private final PurchaseOrderMapper mapper;
+    private final DomainEventPublisher domainEventPublisher;
 
     @Transactional
     public PurchaseOrderDto createPurchaseOrder(UUID tenantId, PurchaseOrderDto dto) {
         PurchaseOrder purchaseOrder = mapper.toEntity(dto);
         purchaseOrder.setTenantId(tenantId);
         PurchaseOrder saved = repository.save(purchaseOrder);
-        return mapper.toDto(saved);
+        PurchaseOrderDto resultDto = mapper.toDto(saved);
+
+        // Publish event
+        domainEventPublisher.publish("purchase-order-created", resultDto);
+
+        return resultDto;
     }
 
     @Transactional
