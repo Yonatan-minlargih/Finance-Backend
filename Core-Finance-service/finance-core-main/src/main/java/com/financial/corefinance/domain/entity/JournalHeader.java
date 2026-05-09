@@ -72,6 +72,7 @@ public class JournalHeader extends BaseEntity {
     @Column(name = "narration", length = 1000)
     private String narration;
 
+    @Builder.Default
     @OneToMany(mappedBy = "journalHeader", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<JournalLine> journalLines = new ArrayList<>();
 

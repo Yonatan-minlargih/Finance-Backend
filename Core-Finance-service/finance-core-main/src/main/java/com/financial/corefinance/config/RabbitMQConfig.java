@@ -2,6 +2,9 @@ package com.financial.corefinance.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.amqp.rabbit.core.RabbitAdmin;
+import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -11,9 +14,30 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @RequiredArgsConstructor
+@Slf4j
 public class RabbitMQConfig {
 
     private final ApplicationProperties properties;
+    private final ConnectionFactory connectionFactory;
+
+    @PostConstruct
+    public void init() {
+        try {
+            log.info("🔍 Testing RabbitMQ connection on startup...");
+            connectionFactory.createConnection().close();
+            log.info("✅ RabbitMQ connection successful!");
+        } catch (Exception e) {
+            log.error("❌ RabbitMQ connection failed: {}", e.getMessage());
+        }
+    }
+
+    @Bean
+    public RabbitAdmin rabbitAdmin(ConnectionFactory connectionFactory) {
+        RabbitAdmin admin = new RabbitAdmin(connectionFactory);
+        admin.setAutoStartup(true);
+        log.info("🚀 RabbitAdmin initialized for automatic declaration");
+        return admin;
+    }
 
     @Bean
     public DirectExchange exchange() {
@@ -142,8 +166,25 @@ public class RabbitMQConfig {
 
     @Bean
     public RabbitTemplate rabbitTemplate(ConnectionFactory factory, ObjectMapper mapper) {
-        final var rabbitTemplate = new RabbitTemplate(factory);
-        rabbitTemplate.setMessageConverter(jacksonConverter(mapper));
-        return rabbitTemplate;
+        final RabbitTemplate template = new RabbitTemplate(factory);
+        template.setMessageConverter(jacksonConverter(mapper));
+
+        template.setConfirmCallback((correlationData, ack, cause) -> {
+            if (ack) {
+                log.info("✅ Message confirmed by exchange: {}", correlationData);
+            } else {
+                log.error("❌ Message not confirmed by exchange: {}, cause: {}", correlationData, cause);
+            }
+        });
+
+        template.setReturnsCallback(returned -> {
+            log.error("❌ Message returned: replyCode={}, replyText={}, exchange={}, routingKey={}",
+                    returned.getReplyCode(), returned.getReplyText(),
+                    returned.getExchange(), returned.getRoutingKey());
+        });
+
+        template.setMandatory(true);
+
+        return template;
     }
 }

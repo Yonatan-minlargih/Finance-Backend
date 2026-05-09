@@ -5,6 +5,7 @@ import com.financial.corefinance.domain.entity.AccountingPeriod;
 import com.financial.corefinance.exception.AccountValidationException;
 import com.financial.corefinance.repository.FiscalYearRepository;
 import com.financial.corefinance.repository.AccountingPeriodRepository;
+import com.financial.corefinance.event.FinanceEventService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,8 @@ public class FiscalYearService {
 
     private final FiscalYearRepository fiscalYearRepository;
     private final AccountingPeriodRepository accountingPeriodRepository;
+    private final com.financial.corefinance.repository.CalendarDefinitionRepository calendarDefinitionRepository;
+    private final FinanceEventService financeEventService;
 
     @Transactional
     public FiscalYear createFiscalYear(@Valid FiscalYear fiscalYear) {
@@ -42,6 +45,16 @@ public class FiscalYearService {
         if (fiscalYear.getStartDate().isAfter(fiscalYear.getEndDate())) {
             throw new AccountValidationException("Start date cannot be after end date");
         }
+
+        // Validate calendar definition exists
+        if (fiscalYear.getCalendarDefinitionId() != null) {
+            boolean calendarExists = calendarDefinitionRepository.existsById(fiscalYear.getCalendarDefinitionId());
+            if (!calendarExists) {
+                throw new AccountValidationException("Calendar definition not found: " + fiscalYear.getCalendarDefinitionId());
+            }
+        } else {
+            throw new AccountValidationException("Calendar definition is required");
+        }
         
         // Validate no overlap with existing fiscal years
         validateNoDateOverlap(tenantId, fiscalYear);
@@ -56,8 +69,8 @@ public class FiscalYearService {
         if (fiscalYear.getTotalPeriods() == null) {
             fiscalYear.setTotalPeriods(12);
         }
-        
         FiscalYear savedFiscalYear = fiscalYearRepository.save(fiscalYear);
+        financeEventService.publishFiscalYearCreatedEvent(savedFiscalYear.getId(), savedFiscalYear.getTenantId(), "system");
         log.info("Fiscal year created successfully: {}", savedFiscalYear.getYearNumber());
         return savedFiscalYear;
     }
@@ -155,6 +168,7 @@ public class FiscalYearService {
         fiscalYear.setClosedBy(closedBy);
         
         FiscalYear updatedFiscalYear = fiscalYearRepository.save(fiscalYear);
+        financeEventService.publishFiscalYearClosedEvent(updatedFiscalYear.getId(), updatedFiscalYear.getTenantId(), closedBy);
         log.info("Fiscal year closed successfully: {}", updatedFiscalYear.getYearNumber());
         return updatedFiscalYear;
     }
@@ -342,5 +356,33 @@ public class FiscalYearService {
     public boolean isAccountingPeriodOpen(UUID periodId) {
         Optional<AccountingPeriod> periodOpt = accountingPeriodRepository.findById(periodId);
         return periodOpt.map(p -> p.getIsOpen() && !p.getIsClosed()).orElse(false);
+    }
+
+    @Transactional
+    public com.financial.corefinance.domain.entity.CalendarDefinition createCalendarDefinition(com.financial.corefinance.domain.entity.CalendarDefinition definition) {
+        log.info("Creating calendar definition: {}", definition.getCalendarName());
+        
+        if (calendarDefinitionRepository.existsByTenantIdAndCalendarName(definition.getTenantId(), definition.getCalendarName())) {
+            throw new AccountValidationException("Calendar definition with name " + definition.getCalendarName() + " already exists");
+        }
+        
+        if (definition.getIsDefault() != null && definition.getIsDefault()) {
+            // Unset other defaults for this tenant
+            List<com.financial.corefinance.domain.entity.CalendarDefinition> others = calendarDefinitionRepository.findByTenantId(definition.getTenantId());
+            others.forEach(c -> c.setIsDefault(false));
+            calendarDefinitionRepository.saveAll(others);
+        }
+        
+        return calendarDefinitionRepository.save(definition);
+    }
+
+    @Transactional(readOnly = true)
+    public List<com.financial.corefinance.domain.entity.CalendarDefinition> getAllCalendarDefinitions(String tenantId) {
+        return calendarDefinitionRepository.findByTenantId(tenantId);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<com.financial.corefinance.domain.entity.CalendarDefinition> getCalendarDefinitionById(UUID id) {
+        return calendarDefinitionRepository.findById(id);
     }
 }

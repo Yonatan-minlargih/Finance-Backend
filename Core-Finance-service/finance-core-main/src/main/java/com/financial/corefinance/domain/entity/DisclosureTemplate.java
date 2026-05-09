@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,7 +21,7 @@ uniqueConstraints = {
     @UniqueConstraint(name = "uq_disclosure_templates_tenant_code", columnNames = {"tenant_id", "template_code"})
 })
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
@@ -72,6 +73,7 @@ public class DisclosureTemplate extends BaseEntity {
     @Column(name = "effective_to")
     private java.time.LocalDate effectiveTo;
 
+    @Builder.Default
     @OneToMany(mappedBy = "disclosureTemplate", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<DisclosureItem> disclosureItems = new ArrayList<>();
 }

@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -22,7 +23,7 @@ import java.util.UUID;
     @Index(name = "idx_approval_steps_status", columnList = "status")
 })
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
@@ -106,6 +107,7 @@ public class ApprovalStep extends BaseEntity {
     @Builder.Default
     private String approvalType = "ANYONE"; // ANYONE, ALL, MAJORITY
 
+    @Builder.Default
     @OneToMany(mappedBy = "approvalStep", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<ApprovalHistory> approvalHistory = new ArrayList<>();
 

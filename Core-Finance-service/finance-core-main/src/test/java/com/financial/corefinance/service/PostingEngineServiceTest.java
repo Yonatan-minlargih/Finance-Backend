@@ -85,7 +85,7 @@ class PostingEngineServiceTest {
             .seriesCode("JRN")
             .seriesName("Journal Entries")
             .prefix("JRN-")
-            .currentNumber(1000)
+            .currentNumber(1000L)
             .numberLength(6)
             .build();
 
@@ -111,7 +111,7 @@ class PostingEngineServiceTest {
     @Test
     void createAndPostJournal_ValidJournal_ShouldPostSuccessfully() {
         // Given
-        when(businessValidationService.validateJournalForPosting(any())).thenAnswer(invocation -> null);
+        doNothing().when(businessValidationService).validateJournalForPosting(any());
         when(numberingSeriesRepository.findByTenantIdAndSeriesCode(eq("test-tenant"), eq("JRN")))
             .thenReturn(Optional.of(testNumberingSeries));
         when(journalHeaderRepository.save(any(JournalHeader.class))).thenAnswer(invocation -> {
@@ -181,7 +181,7 @@ class PostingEngineServiceTest {
             .build();
 
         when(journalHeaderRepository.findById(journalId)).thenReturn(Optional.of(draftJournal));
-        when(businessValidationService.validateJournalForPosting(any())).thenAnswer(invocation -> null);
+        doNothing().when(businessValidationService).validateJournalForPosting(any());
         when(numberingSeriesRepository.findByTenantIdAndSeriesCode(eq("test-tenant"), eq("JRN")))
             .thenReturn(Optional.of(testNumberingSeries));
         when(journalHeaderRepository.save(any(JournalHeader.class))).thenReturn(draftJournal);
@@ -230,8 +230,7 @@ class PostingEngineServiceTest {
         originalJournal.setJournalLines(Arrays.asList(originalLine));
 
         when(journalHeaderRepository.findById(originalJournalId)).thenReturn(Optional.of(originalJournal));
-        when(businessValidationService.validateJournalReversal(eq(originalJournal), any()))
-            .thenAnswer(invocation -> null);
+        doNothing().when(businessValidationService).validateJournalReversal(any(), any());
         when(numberingSeriesRepository.findByTenantIdAndSeriesCode(eq("test-tenant"), eq("JRN")))
             .thenReturn(Optional.of(testNumberingSeries));
         when(journalHeaderRepository.save(any(JournalHeader.class))).thenAnswer(invocation -> {
@@ -249,7 +248,7 @@ class PostingEngineServiceTest {
         assertEquals("JRN-001002", result.getJournalNumber());
         assertEquals(JournalHeader.JournalType.REVERSAL, result.getJournalType());
         assertEquals(originalJournalId, result.getOriginalJournalId());
-        assertTrue(result.getIsReversal());
+        // assertTrue(result.getIsReversal()); // Field does not exist
         verify(businessValidationService).validateJournalReversal(originalJournal, "Test reversal");
         verify(journalHeaderRepository).save(any(JournalHeader.class));
     }

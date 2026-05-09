@@ -16,6 +16,15 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface JournalMapper {
 
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "tenantId", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "createdBy", ignore = true)
+    @Mapping(target = "updatedBy", ignore = true)
+    @Mapping(target = "version", ignore = true)
+    @Mapping(target = "journalNumber", ignore = true)
+    @Mapping(target = "accountingPeriod", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "postedAt", ignore = true)
     @Mapping(target = "postedBy", ignore = true)
@@ -35,6 +44,15 @@ public interface JournalMapper {
     @Mapping(target = "journalLines", source = "journalLines", qualifiedByName = "mapJournalLines")
     JournalHeader toJournalHeader(JournalHeaderRequest request);
 
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "tenantId", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "createdBy", ignore = true)
+    @Mapping(target = "updatedBy", ignore = true)
+    @Mapping(target = "version", ignore = true)
+    @Mapping(target = "journalHeader", ignore = true)
+    @Mapping(target = "account", ignore = true)
     @Mapping(target = "journalHeaderId", ignore = true)
     @Mapping(target = "lineNumber", ignore = true)
     @Mapping(target = "reconciled", ignore = true)
@@ -42,6 +60,7 @@ public interface JournalMapper {
     @Mapping(target = "reconciledBy", ignore = true)
     JournalLine toJournalLine(JournalLineRequest request);
 
+    @Mapping(target = "journalId", source = "id")
     @Mapping(target = "accountingPeriodName", ignore = true)
     @Mapping(target = "journalLines", source = "journalLines", qualifiedByName = "mapJournalLineResponses")
     JournalHeaderResponse toJournalHeaderResponse(JournalHeader journalHeader);
@@ -56,6 +75,31 @@ public interface JournalMapper {
     @Named("mapJournalLineResponses")
     List<JournalLineResponse> mapJournalLineResponses(List<JournalLine> journalLines);
 
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "tenantId", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "createdBy", ignore = true)
+    @Mapping(target = "updatedBy", ignore = true)
+    @Mapping(target = "version", ignore = true)
+    @Mapping(target = "journalNumber", ignore = true)
+    @Mapping(target = "accountingPeriod", ignore = true)
+    @Mapping(target = "totalDebit", ignore = true)
+    @Mapping(target = "totalCredit", ignore = true)
+    @Mapping(target = "status", ignore = true)
+    @Mapping(target = "postedAt", ignore = true)
+    @Mapping(target = "postedBy", ignore = true)
+    @Mapping(target = "approvedAt", ignore = true)
+    @Mapping(target = "approvedBy", ignore = true)
+    @Mapping(target = "rejectedAt", ignore = true)
+    @Mapping(target = "rejectedBy", ignore = true)
+    @Mapping(target = "rejectionReason", ignore = true)
+    @Mapping(target = "isReversed", ignore = true)
+    @Mapping(target = "reversedBy", ignore = true)
+    @Mapping(target = "reversedAt", ignore = true)
+    @Mapping(target = "reversalReason", ignore = true)
+    @Mapping(target = "originalJournalId", ignore = true)
+    @Mapping(target = "attachmentCount", ignore = true)
     void updateJournalHeaderFromRequest(JournalHeaderRequest request, @MappingTarget JournalHeader journalHeader);
 
     default JournalLine updateJournalLineFromRequest(JournalLineRequest request, JournalLine existingLine) {

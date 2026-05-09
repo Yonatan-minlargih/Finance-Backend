@@ -202,7 +202,7 @@ public class PostingEngineService {
         }
     }
 
-    private void generateJournalNumber(JournalHeader journalHeader) {
+    void generateJournalNumber(JournalHeader journalHeader) {
         String tenantId = journalHeader.getTenantId();
         String seriesCode = "JOURNAL";
         

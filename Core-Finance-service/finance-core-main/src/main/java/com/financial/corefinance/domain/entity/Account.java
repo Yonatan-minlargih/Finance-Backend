@@ -58,6 +58,7 @@ public class Account extends BaseEntity {
     @JoinColumn(name = "parent_account_id", insertable = false, updatable = false)
     private Account parentAccount;
 
+    @Builder.Default
     @OneToMany(mappedBy = "parentAccount", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Account> subAccounts = new ArrayList<>();
 

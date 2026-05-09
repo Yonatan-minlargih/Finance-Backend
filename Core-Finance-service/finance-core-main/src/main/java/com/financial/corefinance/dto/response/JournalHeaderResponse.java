@@ -1,7 +1,10 @@
 package com.financial.corefinance.dto.response;
 
 import com.financial.corefinance.domain.entity.JournalHeader;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -10,9 +13,12 @@ import java.util.List;
 import java.util.UUID;
 
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class JournalHeaderResponse {
 
-    private UUID id;
+    private UUID journalId;
     private String tenantId;
     private String journalNumber;
     private LocalDateTime createdAt;

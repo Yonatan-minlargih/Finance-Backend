@@ -14,8 +14,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-05-07T11:39:58+0300",
-    comments = "version: 1.5.5.Final, compiler: javac, environment: Java 25.0.3 (Eclipse Adoptium)"
+    date = "2026-05-09T14:38:28+0300",
+    comments = "version: 1.5.5.Final, compiler: javac, environment: Java 21.0.9 (Oracle Corporation)"
 )
 @Component
 public class JournalMapperImpl implements JournalMapper {
@@ -83,47 +83,47 @@ public class JournalMapperImpl implements JournalMapper {
             return null;
         }
 
-        JournalHeaderResponse journalHeaderResponse = new JournalHeaderResponse();
+        JournalHeaderResponse.JournalHeaderResponseBuilder journalHeaderResponse = JournalHeaderResponse.builder();
 
-        journalHeaderResponse.setJournalLines( mapJournalLineResponses( journalHeader.getJournalLines() ) );
-        journalHeaderResponse.setId( journalHeader.getId() );
-        journalHeaderResponse.setTenantId( journalHeader.getTenantId() );
-        journalHeaderResponse.setJournalNumber( journalHeader.getJournalNumber() );
-        journalHeaderResponse.setCreatedAt( journalHeader.getCreatedAt() );
-        journalHeaderResponse.setUpdatedAt( journalHeader.getUpdatedAt() );
-        journalHeaderResponse.setCreatedBy( journalHeader.getCreatedBy() );
-        journalHeaderResponse.setUpdatedBy( journalHeader.getUpdatedBy() );
-        journalHeaderResponse.setVersion( journalHeader.getVersion() );
-        journalHeaderResponse.setJournalDate( journalHeader.getJournalDate() );
-        journalHeaderResponse.setAccountingPeriodId( journalHeader.getAccountingPeriodId() );
-        journalHeaderResponse.setJournalType( journalHeader.getJournalType() );
-        journalHeaderResponse.setReferenceNumber( journalHeader.getReferenceNumber() );
-        journalHeaderResponse.setReferenceType( journalHeader.getReferenceType() );
-        journalHeaderResponse.setReferenceId( journalHeader.getReferenceId() );
-        journalHeaderResponse.setDescription( journalHeader.getDescription() );
-        journalHeaderResponse.setNarration( journalHeader.getNarration() );
-        journalHeaderResponse.setTotalDebit( journalHeader.getTotalDebit() );
-        journalHeaderResponse.setTotalCredit( journalHeader.getTotalCredit() );
-        journalHeaderResponse.setStatus( journalHeader.getStatus() );
-        journalHeaderResponse.setPostedAt( journalHeader.getPostedAt() );
-        journalHeaderResponse.setPostedBy( journalHeader.getPostedBy() );
-        journalHeaderResponse.setApprovedAt( journalHeader.getApprovedAt() );
-        journalHeaderResponse.setApprovedBy( journalHeader.getApprovedBy() );
-        journalHeaderResponse.setRejectedAt( journalHeader.getRejectedAt() );
-        journalHeaderResponse.setRejectedBy( journalHeader.getRejectedBy() );
-        journalHeaderResponse.setRejectionReason( journalHeader.getRejectionReason() );
-        journalHeaderResponse.setIsReversed( journalHeader.getIsReversed() );
-        journalHeaderResponse.setReversedBy( journalHeader.getReversedBy() );
-        journalHeaderResponse.setReversedAt( journalHeader.getReversedAt() );
-        journalHeaderResponse.setReversalReason( journalHeader.getReversalReason() );
-        journalHeaderResponse.setOriginalJournalId( journalHeader.getOriginalJournalId() );
-        journalHeaderResponse.setAutoReverse( journalHeader.getAutoReverse() );
-        journalHeaderResponse.setAutoReverseDate( journalHeader.getAutoReverseDate() );
-        journalHeaderResponse.setBatchNumber( journalHeader.getBatchNumber() );
-        journalHeaderResponse.setSourceSystem( journalHeader.getSourceSystem() );
-        journalHeaderResponse.setAttachmentCount( journalHeader.getAttachmentCount() );
+        journalHeaderResponse.journalId( journalHeader.getId() );
+        journalHeaderResponse.journalLines( mapJournalLineResponses( journalHeader.getJournalLines() ) );
+        journalHeaderResponse.tenantId( journalHeader.getTenantId() );
+        journalHeaderResponse.journalNumber( journalHeader.getJournalNumber() );
+        journalHeaderResponse.createdAt( journalHeader.getCreatedAt() );
+        journalHeaderResponse.updatedAt( journalHeader.getUpdatedAt() );
+        journalHeaderResponse.createdBy( journalHeader.getCreatedBy() );
+        journalHeaderResponse.updatedBy( journalHeader.getUpdatedBy() );
+        journalHeaderResponse.version( journalHeader.getVersion() );
+        journalHeaderResponse.journalDate( journalHeader.getJournalDate() );
+        journalHeaderResponse.accountingPeriodId( journalHeader.getAccountingPeriodId() );
+        journalHeaderResponse.journalType( journalHeader.getJournalType() );
+        journalHeaderResponse.referenceNumber( journalHeader.getReferenceNumber() );
+        journalHeaderResponse.referenceType( journalHeader.getReferenceType() );
+        journalHeaderResponse.referenceId( journalHeader.getReferenceId() );
+        journalHeaderResponse.description( journalHeader.getDescription() );
+        journalHeaderResponse.narration( journalHeader.getNarration() );
+        journalHeaderResponse.totalDebit( journalHeader.getTotalDebit() );
+        journalHeaderResponse.totalCredit( journalHeader.getTotalCredit() );
+        journalHeaderResponse.status( journalHeader.getStatus() );
+        journalHeaderResponse.postedAt( journalHeader.getPostedAt() );
+        journalHeaderResponse.postedBy( journalHeader.getPostedBy() );
+        journalHeaderResponse.approvedAt( journalHeader.getApprovedAt() );
+        journalHeaderResponse.approvedBy( journalHeader.getApprovedBy() );
+        journalHeaderResponse.rejectedAt( journalHeader.getRejectedAt() );
+        journalHeaderResponse.rejectedBy( journalHeader.getRejectedBy() );
+        journalHeaderResponse.rejectionReason( journalHeader.getRejectionReason() );
+        journalHeaderResponse.isReversed( journalHeader.getIsReversed() );
+        journalHeaderResponse.reversedBy( journalHeader.getReversedBy() );
+        journalHeaderResponse.reversedAt( journalHeader.getReversedAt() );
+        journalHeaderResponse.reversalReason( journalHeader.getReversalReason() );
+        journalHeaderResponse.originalJournalId( journalHeader.getOriginalJournalId() );
+        journalHeaderResponse.autoReverse( journalHeader.getAutoReverse() );
+        journalHeaderResponse.autoReverseDate( journalHeader.getAutoReverseDate() );
+        journalHeaderResponse.batchNumber( journalHeader.getBatchNumber() );
+        journalHeaderResponse.sourceSystem( journalHeader.getSourceSystem() );
+        journalHeaderResponse.attachmentCount( journalHeader.getAttachmentCount() );
 
-        return journalHeaderResponse;
+        return journalHeaderResponse.build();
     }
 
     @Override

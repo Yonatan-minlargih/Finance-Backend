@@ -55,6 +55,7 @@ public class FiscalYear extends BaseEntity {
     @JoinColumn(name = "calendar_definition_id", insertable = false, updatable = false)
     private CalendarDefinition calendarDefinition;
 
+    @Builder.Default
     @OneToMany(mappedBy = "fiscalYear", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<AccountingPeriod> accountingPeriods = new ArrayList<>();
 
