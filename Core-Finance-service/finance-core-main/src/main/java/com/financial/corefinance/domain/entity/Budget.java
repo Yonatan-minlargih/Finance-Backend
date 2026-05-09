@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -26,7 +27,7 @@ uniqueConstraints = {
     @UniqueConstraint(name = "uq_budgets_tenant_fiscal_year_name", columnNames = {"tenant_id", "fiscal_year_id", "budget_name"})
 })
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
@@ -107,9 +108,11 @@ public class Budget extends BaseEntity {
 
 
 
+    @Builder.Default
     @OneToMany(mappedBy = "budget", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<BudgetVersion> budgetVersions = new ArrayList<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "budget", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<BudgetLine> budgetLines = new ArrayList<>();
 

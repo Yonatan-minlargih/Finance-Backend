@@ -89,6 +89,22 @@ services:
     networks:
       - app-network
 
+  core-finance-service:
+    build:
+      context: ./Core-Finance-service/finance-core-main
+    container_name: core-finance-service
+    restart: always
+    ports:
+      - "${CORE_FINANCE_SERVICE_PORT}:8080"
+    env_file:
+      - .env
+    depends_on:
+      - mysql
+      - rabbitmq
+      - keycloak
+    networks:
+      - app-network
+
 networks:
   app-network:
 

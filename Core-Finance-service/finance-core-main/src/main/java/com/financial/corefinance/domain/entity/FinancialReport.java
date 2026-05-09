@@ -106,6 +106,7 @@ public class FinancialReport extends BaseEntity {
     @Column(name = "file_type", length = 20)
     private String fileType;
 
+    @Builder.Default
     @OneToMany(mappedBy = "financialReport", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<ReportLine> reportLines = new ArrayList<>();
 

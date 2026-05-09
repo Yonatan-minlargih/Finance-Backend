@@ -34,7 +34,7 @@ public class AccountController {
     private final AccountService accountService;
 
     @PostMapping
-    @PreAuthorize("hasRole('FINANCE_MANAGER')")
+    // @PreAuthorize("hasRole('FINANCE_MANAGER')")
     @Operation(summary = "Create a new account", description = "Creates a new account in the chart of accounts")
     public ResponseEntity<AccountResponse> createAccount(@Valid @RequestBody AccountRequest request) {
         log.info("Creating account: {}", request.getAccountCode());
@@ -43,7 +43,7 @@ public class AccountController {
     }
 
     @GetMapping("/{accountId}")
-    @PreAuthorize("hasRole('ACCOUNTANT') or hasRole('FINANCE_MANAGER') or hasRole('AUDITOR')")
+    // @PreAuthorize("hasRole('ACCOUNTANT') or hasRole('FINANCE_MANAGER') or hasRole('AUDITOR')")
     @Operation(summary = "Get account by ID", description = "Retrieves an account by its ID")
     public ResponseEntity<AccountResponse> getAccount(
             @Parameter(description = "Account ID") @PathVariable UUID accountId) {
@@ -55,7 +55,7 @@ public class AccountController {
     }
 
     @GetMapping("/code/{accountCode}")
-    @PreAuthorize("hasRole('ACCOUNTANT') or hasRole('FINANCE_MANAGER') or hasRole('AUDITOR')")
+    // @PreAuthorize("hasRole('ACCOUNTANT') or hasRole('FINANCE_MANAGER') or hasRole('AUDITOR')")
     @Operation(summary = "Get account by code", description = "Retrieves an account by its code")
     public ResponseEntity<AccountResponse> getAccountByCode(
             @Parameter(description = "Account code") @PathVariable String accountCode) {
@@ -67,7 +67,7 @@ public class AccountController {
                 .orElse(ResponseEntity.notFound().build());
     }
     @GetMapping
-    @PreAuthorize("hasRole('ACCOUNTANT') or hasRole('FINANCE_MANAGER') or hasRole('AUDITOR')")
+    // @PreAuthorize("hasRole('ACCOUNTANT') or hasRole('FINANCE_MANAGER') or hasRole('AUDITOR')")
     @Operation(summary = "Get all accounts", description = "Retrieves a paginated list of accounts")
     public ResponseEntity<Page<AccountResponse>> getAllAccounts(
             @Parameter(description = "Page number (0-based)") @RequestParam(defaultValue = "0") int page,
@@ -87,7 +87,7 @@ public class AccountController {
     }
 
     @GetMapping("/search")
-    @PreAuthorize("hasRole('ACCOUNTANT') or hasRole('FINANCE_MANAGER') or hasRole('AUDITOR')")
+    // @PreAuthorize("hasRole('ACCOUNTANT') or hasRole('FINANCE_MANAGER') or hasRole('AUDITOR')")
     @Operation(summary = "Search accounts", description = "Searches accounts by code or name")
     public ResponseEntity<List<AccountResponse>> searchAccounts(
             @Parameter(description = "Search term") @RequestParam String search) {
@@ -100,7 +100,7 @@ public class AccountController {
     }
 
     @GetMapping("/type/{accountType}")
-    @PreAuthorize("hasRole('ACCOUNTANT') or hasRole('FINANCE_MANAGER') or hasRole('AUDITOR')")
+    // @PreAuthorize("hasRole('ACCOUNTANT') or hasRole('FINANCE_MANAGER') or hasRole('AUDITOR')")
     @Operation(summary = "Get accounts by type", description = "Retrieves accounts filtered by type")
     public ResponseEntity<List<AccountResponse>> getAccountsByType(
             @Parameter(description = "Account type") @PathVariable Account.AccountType accountType) {
@@ -113,7 +113,7 @@ public class AccountController {
     }
 
     @GetMapping("/ifrs-category/{ifrsCategory}")
-    @PreAuthorize("hasRole('ACCOUNTANT') or hasRole('FINANCE_MANAGER') or hasRole('AUDITOR')")
+    // @PreAuthorize("hasRole('ACCOUNTANT') or hasRole('FINANCE_MANAGER') or hasRole('AUDITOR')")
     @Operation(summary = "Get accounts by IFRS category", description = "Retrieves accounts filtered by IFRS category")
     public ResponseEntity<List<AccountResponse>> getAccountsByIFRSCategory(
             @Parameter(description = "IFRS category") @PathVariable Account.IFRSCategory ifrsCategory) {
@@ -125,7 +125,7 @@ public class AccountController {
         return ResponseEntity.ok(accounts);
     }
     @GetMapping("/hierarchy")
-    @PreAuthorize("hasRole('ACCOUNTANT') or hasRole('FINANCE_MANAGER') or hasRole('AUDITOR')")
+    // @PreAuthorize("hasRole('ACCOUNTANT') or hasRole('FINANCE_MANAGER') or hasRole('AUDITOR')")
     @Operation(summary = "Get account hierarchy", description = "Retrieves the complete account hierarchy")
     public ResponseEntity<List<AccountResponse>> getAccountHierarchy() {
 
@@ -137,7 +137,7 @@ public class AccountController {
     }
 
     @GetMapping("/parent/{parentId}")
-    @PreAuthorize("hasRole('ACCOUNTANT') or hasRole('FINANCE_MANAGER') or hasRole('AUDITOR')")
+    // @PreAuthorize("hasRole('ACCOUNTANT') or hasRole('FINANCE_MANAGER') or hasRole('AUDITOR')")
     @Operation(summary = "Get sub-accounts", description = "Retrieves sub-accounts for a parent account")
     public ResponseEntity<List<AccountResponse>> getSubAccounts(
             @Parameter(description = "Parent account ID") @PathVariable UUID parentId) {
@@ -150,7 +150,7 @@ public class AccountController {
     }
 
     @GetMapping("/manual-entry")
-    @PreAuthorize("hasRole('ACCOUNTANT') or hasRole('FINANCE_MANAGER')")
+    // @PreAuthorize("hasRole('ACCOUNTANT') or hasRole('FINANCE_MANAGER')")
     @Operation(summary = "Get accounts for manual entry", description = "Retrieves accounts that allow manual entry")
     public ResponseEntity<List<AccountResponse>> getAccountsForManualEntry() {
 
@@ -162,7 +162,7 @@ public class AccountController {
     }
 
     @PutMapping("/{accountId}")
-    @PreAuthorize("hasRole('FINANCE_MANAGER')")
+    // @PreAuthorize("hasRole('FINANCE_MANAGER')")
     @Operation(summary = "Update account", description = "Updates an existing account")
     public ResponseEntity<AccountResponse> updateAccount(
             @Parameter(description = "Account ID") @PathVariable UUID accountId,
@@ -175,7 +175,7 @@ public class AccountController {
     }
 
     @DeleteMapping("/{accountId}")
-    @PreAuthorize("hasRole('FINANCE_MANAGER')")
+    // @PreAuthorize("hasRole('FINANCE_MANAGER')")
     @Operation(summary = "Delete account", description = "Deletes an account (if not used in transactions)")
     public ResponseEntity<Void> deleteAccount(
             @Parameter(description = "Account ID") @PathVariable UUID accountId) {

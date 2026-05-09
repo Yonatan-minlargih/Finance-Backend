@@ -64,7 +64,7 @@ class JournalControllerTest {
         JournalHeaderResponse response = JournalHeaderResponse.builder()
             .journalId(postedJournal.getId())
             .journalNumber(postedJournal.getJournalNumber())
-            .status(postedJournal.getStatus().toString())
+            .status(postedJournal.getStatus())
             .description(postedJournal.getDescription())
             .build();
 
@@ -103,7 +103,7 @@ class JournalControllerTest {
 
         JournalHeaderResponse response = JournalHeaderResponse.builder()
             .journalId(draftJournal.getId())
-            .status("DRAFT")
+            .status(JournalHeader.JournalStatus.DRAFT)
             .description(draftJournal.getDescription())
             .build();
 
@@ -135,7 +135,7 @@ class JournalControllerTest {
         JournalHeaderResponse response = JournalHeaderResponse.builder()
             .journalId(journalId)
             .journalNumber("JRN-001001")
-            .status("POSTED")
+            .status(JournalHeader.JournalStatus.POSTED)
             .build();
 
         when(postingEngineService.postJournal(journalId)).thenReturn(postedJournal);
@@ -165,8 +165,8 @@ class JournalControllerTest {
         JournalHeaderResponse response = JournalHeaderResponse.builder()
             .journalId(reversalJournal.getId())
             .journalNumber("JRN-001002")
-            .status("POSTED")
-            .journalType("REVERSAL")
+            .status(JournalHeader.JournalStatus.POSTED)
+            .journalType(JournalHeader.JournalType.REVERSAL)
             .build();
 
         when(postingEngineService.reverseJournal(journalId, reversalReason)).thenReturn(reversalJournal);
@@ -190,7 +190,7 @@ class JournalControllerTest {
         JournalHeaderResponse response = JournalHeaderResponse.builder()
             .journalId(journalId)
             .journalNumber("JRN-001001")
-            .status("POSTED")
+            .status(JournalHeader.JournalStatus.POSTED)
             .build();
 
         // This would need to be implemented in a service
@@ -246,7 +246,7 @@ class JournalControllerTest {
         List<JournalHeaderResponse> responses = Arrays.asList(
             JournalHeaderResponse.builder()
                 .journalId(UUID.randomUUID())
-                .status("POSTED")
+                .status(JournalHeader.JournalStatus.POSTED)
                 .build()
         );
 
@@ -288,7 +288,7 @@ class JournalControllerTest {
         List<JournalHeaderResponse> responses = Arrays.asList(
             JournalHeaderResponse.builder()
                 .journalId(pendingJournals.get(0).getId())
-                .status("APPROVED")
+                .status(JournalHeader.JournalStatus.APPROVED)
                 .build()
         );
 

@@ -1,29 +1,30 @@
 server:
-  port: ${SERVER_PORT:8081}
-  servlet:
-    context-path: /core-finance-service
+  port: 8080
 
 spring:
+  application:
+    name: core-finance-service
   security:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8080/realms/master
+          issuer-uri: ${KEYCLOAK_ISSUER_URI}
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI}
   datasource:
-    url: jdbc:mysql://localhost:3306/core_finance
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:Kaleabdak12$}
+    url: ${CORE_FINANCE_DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
-      ddl-auto: ${DDL_AUTO:update}
+      ddl-auto: update
     show-sql: false
   rabbitmq:
-    host: ${RABBITMQ_HOST:localhost}
-    port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USERNAME:guest}
-    password: ${RABBITMQ_PASSWORD:guest}
-    virtual-host: ${RABBITMQ_VHOST:/}
+    host: ${RABBITMQ_HOST}
+    port: ${RABBITMQ_PORT}
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
+    dynamic: ${RABBITMQ_DYNAMIC:true}
 
 rabbitmq:
   financeEventsExchange: finance.events.exchange
@@ -41,8 +42,9 @@ rabbitmq:
 
 eureka:
   client:
+    enabled: ${EUREKA_CLIENT_ENABLED:false}
     service-url:
-      defaultZone: ${EUREKA_SERVER}
+      defaultZone: ${EUREKA_SERVER:http://localhost:8761/eureka/}
 
 management:
   endpoints:
@@ -50,19 +52,19 @@ management:
       exposure:
         include: health,info,prometheus
 
-#keycloak:
- # server-url: ${KEYCLOAK_SERVER_URL}
- # realm: ${KEYCLOAK_REALM}
- # client-id: ${KEYCLOAK_CLIENT_ID:core-finance-service}
- # client-secret: ${KEYCLOAK_CLIENT_SECRET}
+keycloak:
+  server-url: ${KEYCLOAK_SERVER_URL}
+  realm: ${KEYCLOAK_REALM}
+  client-id: ${CORE_FINANCE_CLIENT_ID}
+  client-secret: ${CORE_FINANCE_CLIENT_SECRET}
 
 services:
   transactional:
-    url: ${TRANSACTIONAL_SERVICE_URL:http://localhost:8082/transactional-service}
+    url: ${TRANSACTIONAL_SERVICE_URL:http://transaction-service:8080}
   costing:
-    url: ${COSTING_SERVICE_URL:http://localhost:8083/costing-service}
+    url: ${COSTING_SERVICE_URL:http://cost-service:8080}
   payroll:
-    url: ${PAYROLL_SERVICE_URL:http://localhost:8084/payroll-service}
+    url: ${PAYROLL_SERVICE_URL:http://payroll-service:8080}
 
 integration:
   contract-version: ${INTEGRATION_CONTRACT_VERSION:v1}
@@ -72,16 +74,6 @@ multitenancy:
 
 logging:
   level:
-    com.financial.corefinance: ${APP_LOG_LEVEL:INFO}
-    org.springframework.security: WARN
-
-
-#####  for testing
-keycloak:
-  server-url: http://localhost:8080
-  realm: master
-  client-id: core-finance-service
-  client-secret: test-secret
-
-
-KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/master
+    root: ${LOGGING_LEVEL_ROOT:INFO}
+    org.springframework: ${LOGGING_LEVEL_SPRING:INFO}
+    com.financial.corefinance: ${LOGGING_LEVEL_APPLICATION:INFO}

@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Table(name = "numbering_series", indexes = {
@@ -18,7 +19,7 @@ import lombok.NoArgsConstructor;
                 @UniqueConstraint(name = "uq_numbering_series_tenant_code", columnNames = {"tenant_id", "series_code"})
         })
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)

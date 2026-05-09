@@ -6,6 +6,7 @@ import com.financial.corefinance.domain.entity.BudgetVersion;
 import com.financial.corefinance.domain.entity.BudgetChange;
 import com.financial.corefinance.exception.BudgetValidationException;
 import com.financial.corefinance.repository.*;
+import com.financial.corefinance.event.FinanceEventService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,7 @@ public class BudgetService {
     private final BudgetLineRepository budgetLineRepository;
     private final BudgetChangeRepository budgetChangeRepository;
     private final FiscalYearRepository fiscalYearRepository;
+    private final FinanceEventService financeEventService;
 
     @Transactional
     public Budget createBudget(@Valid Budget budget) {
@@ -71,8 +73,8 @@ public class BudgetService {
         if (budget.getLocked() == null) {
             budget.setLocked(false);
         }
-        
         Budget savedBudget = budgetRepository.save(budget);
+        financeEventService.publishBudgetCreatedEvent(savedBudget.getId(), savedBudget.getTenantId(), "system");
         log.info("Budget created successfully: {}", savedBudget.getBudgetName());
         return savedBudget;
     }
@@ -221,6 +223,7 @@ public class BudgetService {
         budget.setApprovedBy(approvedBy);
         
         Budget updatedBudget = budgetRepository.save(budget);
+        financeEventService.publishBudgetUpdatedEvent(updatedBudget.getId(), updatedBudget.getTenantId(), approvedBy);
         log.info("Budget approved successfully: {}", updatedBudget.getBudgetName());
         return updatedBudget;
     }
@@ -245,6 +248,7 @@ public class BudgetService {
         budget.setLockedBy(lockedBy);
         
         Budget updatedBudget = budgetRepository.save(budget);
+        financeEventService.publishBudgetUpdatedEvent(updatedBudget.getId(), updatedBudget.getTenantId(), lockedBy);
         log.info("Budget locked successfully: {}", updatedBudget.getBudgetName());
         return updatedBudget;
     }

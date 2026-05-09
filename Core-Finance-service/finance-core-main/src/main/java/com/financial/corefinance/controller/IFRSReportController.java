@@ -37,7 +37,7 @@ public class IFRSReportController {
     private final FinancialReportingService financialReportingService;
 
     @PostMapping
-    @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('REPORT_MANAGER')")
+    // @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('REPORT_MANAGER')")
     @Operation(summary = "Create financial report", description = "Creates a new financial report")
     public ResponseEntity<FinancialReportResponse> createFinancialReport(@Valid @RequestBody FinancialReportRequest request) {
         FinancialReport report = toFinancialReportEntity(request);
@@ -56,7 +56,7 @@ public class IFRSReportController {
     }
 
     @GetMapping("/{reportId}")
-    @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('REPORT_MANAGER') or hasRole('AUDITOR')")
+    // @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('REPORT_MANAGER') or hasRole('AUDITOR')")
     @Operation(summary = "Get financial report by ID", description = "Retrieves a financial report by its ID")
     public ResponseEntity<FinancialReportResponse> getFinancialReport(
             @Parameter(description = "Report ID") @PathVariable UUID reportId) {
@@ -67,7 +67,7 @@ public class IFRSReportController {
                 .orElse(ResponseEntity.notFound().build());
     }
     @GetMapping
-    @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('REPORT_MANAGER') or hasRole('AUDITOR')")
+    // @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('REPORT_MANAGER') or hasRole('AUDITOR')")
     @Operation(summary = "Get all financial reports", description = "Retrieves a paginated list of financial reports")
     public ResponseEntity<Page<FinancialReportResponse>> getAllFinancialReports(
             @Parameter(description = "Page number (0-based)") @RequestParam(defaultValue = "0") int page,
@@ -85,7 +85,7 @@ public class IFRSReportController {
     }
 
     @GetMapping("/fiscal-year/{fiscalYearId}")
-    @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('REPORT_MANAGER') or hasRole('AUDITOR')")
+    // @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('REPORT_MANAGER') or hasRole('AUDITOR')")
     @Operation(summary = "Get reports by fiscal year", description = "Retrieves financial reports for a specific fiscal year")
     public ResponseEntity<List<FinancialReportResponse>> getReportsByFiscalYear(
             @Parameter(description = "Fiscal year ID") @PathVariable UUID fiscalYearId) {
@@ -98,7 +98,7 @@ public class IFRSReportController {
     }
 
     @GetMapping("/type/{reportType}")
-    @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('REPORT_MANAGER') or hasRole('AUDITOR')")
+    // @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('REPORT_MANAGER') or hasRole('AUDITOR')")
     @Operation(summary = "Get reports by type", description = "Retrieves financial reports filtered by type")
     public ResponseEntity<List<FinancialReportResponse>> getReportsByType(
             @Parameter(description = "Report type") @PathVariable FinancialReport.ReportType reportType) {
@@ -111,7 +111,7 @@ public class IFRSReportController {
     }
 
     @GetMapping("/status/{status}")
-    @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('REPORT_MANAGER') or hasRole('AUDITOR')")
+    // @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('REPORT_MANAGER') or hasRole('AUDITOR')")
     @Operation(summary = "Get reports by status", description = "Retrieves financial reports filtered by status")
     public ResponseEntity<List<FinancialReportResponse>> getReportsByStatus(
             @Parameter(description = "Report status") @PathVariable FinancialReport.ReportStatus status) {
@@ -123,7 +123,7 @@ public class IFRSReportController {
         return ResponseEntity.ok(reports);
     }
     @GetMapping("/search")
-    @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('REPORT_MANAGER') or hasRole('AUDITOR')")
+    // @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('REPORT_MANAGER') or hasRole('AUDITOR')")
     @Operation(summary = "Search financial reports", description = "Searches financial reports by name or description")
     public ResponseEntity<Page<FinancialReportResponse>> searchFinancialReports(
             @Parameter(description = "Search term") @RequestParam String search,
@@ -139,7 +139,7 @@ public class IFRSReportController {
     }
 
     @GetMapping("/fiscal-year/{fiscalYearId}/type/{reportType}/latest")
-    @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('REPORT_MANAGER') or hasRole('AUDITOR')")
+    // @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('REPORT_MANAGER') or hasRole('AUDITOR')")
     @Operation(summary = "Get latest report by type", description = "Retrieves the latest report of a specific type for a fiscal year")
     public ResponseEntity<List<FinancialReportResponse>> getLatestReportsByType(
             @Parameter(description = "Fiscal year ID") @PathVariable UUID fiscalYearId,
@@ -153,7 +153,7 @@ public class IFRSReportController {
     }
 
     @GetMapping("/as-of-date/{date}")
-    @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('REPORT_MANAGER') or hasRole('AUDITOR')")
+    // @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('REPORT_MANAGER') or hasRole('AUDITOR')")
     @Operation(summary = "Get reports as of date", description = "Retrieves financial reports as of a specific date")
     public ResponseEntity<List<FinancialReportResponse>> getReportsAsOfDate(
             @Parameter(description = "Date (YYYY-MM-DD)") @PathVariable String date) {
@@ -167,7 +167,7 @@ public class IFRSReportController {
 
     // IFRS Specific Report Generation Endpoints
     @PostMapping("/generate/statement-of-financial-position")
-    @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('REPORT_MANAGER')")
+    // @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('REPORT_MANAGER')")
     @Operation(summary = "Generate Statement of Financial Position", description = "Generates an IFRS Statement of Financial Position (Balance Sheet)")
     public ResponseEntity<FinancialReportResponse> generateStatementOfFinancialPosition(
             @Parameter(description = "Fiscal year ID") @RequestParam UUID fiscalYearId,
@@ -182,7 +182,7 @@ public class IFRSReportController {
         return ResponseEntity.status(HttpStatus.CREATED).body(toFinancialReportResponse(generated));
     }
     @PostMapping("/generate/profit-loss")
-    @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('REPORT_MANAGER')")
+    // @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('REPORT_MANAGER')")
     @Operation(summary = "Generate Profit and Loss Statement", description = "Generates an IFRS Profit and Loss and Other Comprehensive Income Statement")
     public ResponseEntity<FinancialReportResponse> generateProfitLossStatement(
             @Parameter(description = "Fiscal year ID") @RequestParam UUID fiscalYearId,
@@ -197,7 +197,7 @@ public class IFRSReportController {
     }
 
     @PostMapping("/generate/cash-flow")
-    @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('REPORT_MANAGER')")
+    // @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('REPORT_MANAGER')")
     @Operation(summary = "Generate Cash Flow Statement", description = "Generates an IFRS Cash Flow Statement")
     public ResponseEntity<FinancialReportResponse> generateCashFlowStatement(
             @Parameter(description = "Fiscal year ID") @RequestParam UUID fiscalYearId,
@@ -212,7 +212,7 @@ public class IFRSReportController {
     }
 
     @PostMapping("/generate/changes-in-equity")
-    @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('REPORT_MANAGER')")
+    // @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('REPORT_MANAGER')")
     @Operation(summary = "Generate Statement of Changes in Equity", description = "Generates an IFRS Statement of Changes in Equity")
     public ResponseEntity<FinancialReportResponse> generateChangesInEquityStatement(
             @Parameter(description = "Fiscal year ID") @RequestParam UUID fiscalYearId,
@@ -226,7 +226,7 @@ public class IFRSReportController {
     }
 
     @PostMapping("/{reportId}/approve")
-    @PreAuthorize("hasRole('FINANCE_MANAGER')")
+    // @PreAuthorize("hasRole('FINANCE_MANAGER')")
     @Operation(summary = "Approve financial report", description = "Approves a financial report")
     public ResponseEntity<FinancialReportResponse> approveFinancialReport(
             @Parameter(description = "Report ID") @PathVariable UUID reportId) {
@@ -244,7 +244,7 @@ public class IFRSReportController {
         return ResponseEntity.ok(toFinancialReportResponse(updatedReport));
     }
     @PostMapping("/{reportId}/publish")
-    @PreAuthorize("hasRole('FINANCE_MANAGER')")
+    // @PreAuthorize("hasRole('FINANCE_MANAGER')")
     @Operation(summary = "Publish financial report", description = "Publishes a financial report")
     public ResponseEntity<FinancialReportResponse> publishFinancialReport(
             @Parameter(description = "Report ID") @PathVariable UUID reportId) {
@@ -263,7 +263,7 @@ public class IFRSReportController {
     }
 
     @DeleteMapping("/{reportId}")
-    @PreAuthorize("hasRole('FINANCE_MANAGER')")
+    // @PreAuthorize("hasRole('FINANCE_MANAGER')")
     @Operation(summary = "Delete financial report", description = "Deletes a financial report")
     public ResponseEntity<Void> deleteFinancialReport(
             @Parameter(description = "Report ID") @PathVariable UUID reportId) {

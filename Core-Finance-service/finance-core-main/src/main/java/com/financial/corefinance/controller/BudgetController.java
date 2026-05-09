@@ -34,7 +34,7 @@ public class BudgetController {
     private final BudgetRepository budgetRepository;
 
     @PostMapping
-    @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('BUDGET_MANAGER')")
+    // @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('BUDGET_MANAGER')")
     @Operation(summary = "Create a new budget", description = "Creates a new budget for a fiscal year")
     public ResponseEntity<BudgetResponse> createBudget(@Valid @RequestBody BudgetRequest request) {
         log.info("Creating budget: {}", request.getBudgetName());
@@ -51,7 +51,7 @@ public class BudgetController {
     }
 
     @GetMapping("/{budgetId}")
-    @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('BUDGET_MANAGER') or hasRole('AUDITOR')")
+    // @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('BUDGET_MANAGER') or hasRole('AUDITOR')")
     @Operation(summary = "Get budget by ID", description = "Retrieves a budget by its ID")
     public ResponseEntity<BudgetResponse> getBudget(
             @Parameter(description = "Budget ID") @PathVariable UUID budgetId) {
@@ -62,7 +62,7 @@ public class BudgetController {
                 .orElse(ResponseEntity.notFound().build());
     }
     @GetMapping
-    @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('BUDGET_MANAGER') or hasRole('AUDITOR')")
+    // @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('BUDGET_MANAGER') or hasRole('AUDITOR')")
     @Operation(summary = "Get all budgets", description = "Retrieves a paginated list of budgets")
     public ResponseEntity<Page<BudgetResponse>> getAllBudgets(
             @Parameter(description = "Page number (0-based)") @RequestParam(defaultValue = "0") int page,
@@ -79,7 +79,7 @@ public class BudgetController {
     }
 
     @GetMapping("/fiscal-year/{fiscalYearId}")
-    @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('BUDGET_MANAGER') or hasRole('AUDITOR')")
+    // @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('BUDGET_MANAGER') or hasRole('AUDITOR')")
     @Operation(summary = "Get budgets by fiscal year", description = "Retrieves budgets for a specific fiscal year")
     public ResponseEntity<List<BudgetResponse>> getBudgetsByFiscalYear(
             @Parameter(description = "Fiscal year ID") @PathVariable UUID fiscalYearId) {
@@ -92,7 +92,7 @@ public class BudgetController {
     }
 
     @GetMapping("/department/{departmentId}")
-    @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('BUDGET_MANAGER') or hasRole('AUDITOR')")
+    // @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('BUDGET_MANAGER') or hasRole('AUDITOR')")
     @Operation(summary = "Get budgets by department", description = "Retrieves budgets for a specific department")
     public ResponseEntity<List<BudgetResponse>> getBudgetsByDepartment(
             @Parameter(description = "Department ID") @PathVariable UUID departmentId) {
@@ -105,7 +105,7 @@ public class BudgetController {
     }
 
     @GetMapping("/status/{status}")
-    @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('BUDGET_MANAGER') or hasRole('AUDITOR')")
+    // @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('BUDGET_MANAGER') or hasRole('AUDITOR')")
     @Operation(summary = "Get budgets by status", description = "Retrieves budgets filtered by status")
     public ResponseEntity<List<BudgetResponse>> getBudgetsByStatus(
             @Parameter(description = "Budget status") @PathVariable Budget.BudgetStatus status) {
@@ -117,7 +117,7 @@ public class BudgetController {
         return ResponseEntity.ok(budgets);
     }
     @GetMapping("/type/{budgetType}")
-    @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('BUDGET_MANAGER') or hasRole('AUDITOR')")
+    // @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('BUDGET_MANAGER') or hasRole('AUDITOR')")
     @Operation(summary = "Get budgets by type", description = "Retrieves budgets filtered by type")
     public ResponseEntity<List<BudgetResponse>> getBudgetsByType(
             @Parameter(description = "Budget type") @PathVariable Budget.BudgetType budgetType) {
@@ -130,7 +130,7 @@ public class BudgetController {
     }
 
     @GetMapping("/search")
-    @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('BUDGET_MANAGER') or hasRole('AUDITOR')")
+    // @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('BUDGET_MANAGER') or hasRole('AUDITOR')")
     @Operation(summary = "Search budgets", description = "Searches budgets by name or description")
     public ResponseEntity<Page<BudgetResponse>> searchBudgets(
             @Parameter(description = "Search term") @RequestParam String search,
@@ -145,7 +145,7 @@ public class BudgetController {
     }
 
     @GetMapping("/fiscal-year/{fiscalYearId}/current")
-    @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('BUDGET_MANAGER') or hasRole('AUDITOR')")
+    // @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('BUDGET_MANAGER') or hasRole('AUDITOR')")
     @Operation(summary = "Get current budget", description = "Retrieves the current budget for a fiscal year")
     public ResponseEntity<BudgetResponse> getCurrentBudget(
             @Parameter(description = "Fiscal year ID") @PathVariable UUID fiscalYearId) {
@@ -158,7 +158,7 @@ public class BudgetController {
     }
 
     @PutMapping("/{budgetId}")
-    @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('BUDGET_MANAGER')")
+    // @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('BUDGET_MANAGER')")
     @Operation(summary = "Update budget", description = "Updates an existing budget")
     public ResponseEntity<BudgetResponse> updateBudget(
             @Parameter(description = "Budget ID") @PathVariable UUID budgetId,
@@ -174,7 +174,7 @@ public class BudgetController {
         return ResponseEntity.ok(toBudgetResponse(updatedBudget));
     }
     @PostMapping("/{budgetId}/approve")
-    @PreAuthorize("hasRole('FINANCE_MANAGER')")
+    // @PreAuthorize("hasRole('FINANCE_MANAGER')")
     @Operation(summary = "Approve budget", description = "Approves a budget and makes it active")
     public ResponseEntity<BudgetResponse> approveBudget(
             @Parameter(description = "Budget ID") @PathVariable UUID budgetId) {
@@ -195,7 +195,7 @@ public class BudgetController {
     }
 
     @PostMapping("/{budgetId}/lock")
-    @PreAuthorize("hasRole('FINANCE_MANAGER')")
+    // @PreAuthorize("hasRole('FINANCE_MANAGER')")
     @Operation(summary = "Lock budget", description = "Locks a budget to prevent further changes")
     public ResponseEntity<BudgetResponse> lockBudget(
             @Parameter(description = "Budget ID") @PathVariable UUID budgetId) {
@@ -216,7 +216,7 @@ public class BudgetController {
     }
 
     @DeleteMapping("/{budgetId}")
-    @PreAuthorize("hasRole('FINANCE_MANAGER')")
+    // @PreAuthorize("hasRole('FINANCE_MANAGER')")
     @Operation(summary = "Delete budget", description = "Deletes a budget (if not used in transactions)")
     public ResponseEntity<Void> deleteBudget(
             @Parameter(description = "Budget ID") @PathVariable UUID budgetId) {

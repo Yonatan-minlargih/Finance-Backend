@@ -35,7 +35,7 @@ public class JournalController {
     private final JournalMapper journalMapper;
 
     @PostMapping
-    @PreAuthorize("hasRole('ACCOUNTANT') or hasRole('FINANCE_MANAGER')")
+    // @PreAuthorize("hasRole('ACCOUNTANT') or hasRole('FINANCE_MANAGER')")
     @Operation(summary = "Create and post a journal entry", description = "Creates a new journal entry and posts it to the general ledger")
     public ResponseEntity<JournalHeaderResponse> createAndPostJournal(
             @Valid @RequestBody JournalHeaderRequest request) {
@@ -49,7 +49,7 @@ public class JournalController {
     }
 
     @PostMapping("/draft")
-    @PreAuthorize("hasRole('ACCOUNTANT') or hasRole('FINANCE_MANAGER')")
+    // @PreAuthorize("hasRole('ACCOUNTANT') or hasRole('FINANCE_MANAGER')")
     @Operation(summary = "Save journal as draft", description = "Saves a journal entry as draft without posting")
     public ResponseEntity<JournalHeaderResponse> saveDraftJournal(
             @Valid @RequestBody JournalHeaderRequest request) {
@@ -63,7 +63,7 @@ public class JournalController {
     }
 
     @PostMapping("/{journalId}/post")
-    @PreAuthorize("hasRole('FINANCE_MANAGER')")
+    // @PreAuthorize("hasRole('FINANCE_MANAGER')")
     @Operation(summary = "Post a draft journal", description = "Posts a previously saved draft journal")
     public ResponseEntity<JournalHeaderResponse> postJournal(
             @Parameter(description = "Journal ID") @PathVariable UUID journalId) {
@@ -76,7 +76,7 @@ public class JournalController {
     }
 
     @PostMapping("/{journalId}/reverse")
-    @PreAuthorize("hasRole('FINANCE_MANAGER')")
+    // @PreAuthorize("hasRole('FINANCE_MANAGER')")
     @Operation(summary = "Reverse a posted journal", description = "Creates and posts a reversal journal for the specified journal")
     public ResponseEntity<JournalHeaderResponse> reverseJournal(
             @Parameter(description = "Journal ID") @PathVariable UUID journalId,
@@ -90,7 +90,7 @@ public class JournalController {
     }
 
     @GetMapping("/{journalId}")
-    @PreAuthorize("hasRole('ACCOUNTANT') or hasRole('FINANCE_MANAGER') or hasRole('AUDITOR')")
+    // @PreAuthorize("hasRole('ACCOUNTANT') or hasRole('FINANCE_MANAGER') or hasRole('AUDITOR')")
     @Operation(summary = "Get journal by ID", description = "Retrieves a journal entry by its ID")
     public ResponseEntity<JournalHeaderResponse> getJournal(
             @Parameter(description = "Journal ID") @PathVariable UUID journalId) {
@@ -102,7 +102,7 @@ public class JournalController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ACCOUNTANT') or hasRole('FINANCE_MANAGER') or hasRole('AUDITOR')")
+    // @PreAuthorize("hasRole('ACCOUNTANT') or hasRole('FINANCE_MANAGER') or hasRole('AUDITOR')")
     @Operation(summary = "Get all journals", description = "Retrieves a paginated list of journal entries")
     public ResponseEntity<Page<JournalHeaderResponse>> getAllJournals(
             @Parameter(description = "Page number (0-based)") @RequestParam(defaultValue = "0") int page,
@@ -119,7 +119,7 @@ public class JournalController {
     }
 
     @GetMapping("/search")
-    @PreAuthorize("hasRole('ACCOUNTANT') or hasRole('FINANCE_MANAGER') or hasRole('AUDITOR')")
+    // @PreAuthorize("hasRole('ACCOUNTANT') or hasRole('FINANCE_MANAGER') or hasRole('AUDITOR')")
     @Operation(summary = "Search journals", description = "Searches journal entries by various criteria")
     public ResponseEntity<Page<JournalHeaderResponse>> searchJournals(
             @Parameter(description = "Search term") @RequestParam String search,
@@ -134,7 +134,7 @@ public class JournalController {
     }
 
     @GetMapping("/status/{status}")
-    @PreAuthorize("hasRole('ACCOUNTANT') or hasRole('FINANCE_MANAGER') or hasRole('AUDITOR')")
+    // @PreAuthorize("hasRole('ACCOUNTANT') or hasRole('FINANCE_MANAGER') or hasRole('AUDITOR')")
     @Operation(summary = "Get journals by status", description = "Retrieves journal entries filtered by status")
     public ResponseEntity<List<JournalHeaderResponse>> getJournalsByStatus(
             @Parameter(description = "Journal status") @PathVariable JournalHeader.JournalStatus status) {
@@ -147,7 +147,7 @@ public class JournalController {
     }
 
     @PostMapping("/{journalId}/validate")
-    @PreAuthorize("hasRole('ACCOUNTANT') or hasRole('FINANCE_MANAGER')")
+    // @PreAuthorize("hasRole('ACCOUNTANT') or hasRole('FINANCE_MANAGER')")
     @Operation(summary = "Validate journal balance", description = "Validates if a journal is balanced")
     public ResponseEntity<Boolean> validateJournalBalance(
             @Parameter(description = "Journal ID") @PathVariable UUID journalId) {
@@ -157,7 +157,7 @@ public class JournalController {
     }
 
     @GetMapping("/pending-posting")
-    @PreAuthorize("hasRole('FINANCE_MANAGER')")
+    // @PreAuthorize("hasRole('FINANCE_MANAGER')")
     @Operation(summary = "Get journals pending posting", description = "Retrieves approved journals that are ready for posting")
     public ResponseEntity<List<JournalHeaderResponse>> getJournalsPendingPosting() {
         
@@ -171,14 +171,14 @@ public class JournalController {
     }
 
     @GetMapping("/reconciliation/unreconciled-lines")
-    @PreAuthorize("hasRole('ACCOUNTANT') or hasRole('FINANCE_MANAGER') or hasRole('AUDITOR')")
+    // @PreAuthorize("hasRole('ACCOUNTANT') or hasRole('FINANCE_MANAGER') or hasRole('AUDITOR')")
     @Operation(summary = "Get unreconciled posted journal lines", description = "Retrieves unreconciled lines for reconciliation workflows")
     public ResponseEntity<List<com.financial.corefinance.domain.entity.JournalLine>> getUnreconciledPostedLines() {
         return ResponseEntity.ok(postingEngineService.getUnreconciledPostedLines());
     }
 
     @PostMapping("/reconciliation/lines/{lineId}")
-    @PreAuthorize("hasRole('ACCOUNTANT') or hasRole('FINANCE_MANAGER')")
+    // @PreAuthorize("hasRole('ACCOUNTANT') or hasRole('FINANCE_MANAGER')")
     @Operation(summary = "Set journal line reconciliation status", description = "Marks a posted journal line as reconciled/unreconciled")
     public ResponseEntity<Void> setJournalLineReconciliationStatus(
             @PathVariable UUID lineId,

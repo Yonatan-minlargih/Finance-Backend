@@ -26,21 +26,12 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints
-                .requestMatchers("/api/v1/auth/**").permitAll()
-                .requestMatchers("/api/v1/health/**").permitAll()
-                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                .requestMatchers("/actuator/health").permitAll()
-                .requestMatchers("/actuator/info").permitAll()
+                .requestMatchers("/api/v1/auth/**", "/api/v1/health/**").permitAll()
+                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+                .requestMatchers("/actuator/**").permitAll()
                 
-                // Protected endpoints
-                .requestMatchers("/api/v1/journals/**").hasAnyRole("ACCOUNTANT", "FINANCE_MANAGER", "AUDITOR")
-                .requestMatchers("/api/v1/accounts/**").hasAnyRole("ACCOUNTANT", "FINANCE_MANAGER", "AUDITOR")
-                .requestMatchers("/api/v1/budgets/**").hasAnyRole("FINANCE_MANAGER", "BUDGET_MANAGER", "AUDITOR")
-                .requestMatchers("/api/v1/periods/**").hasAnyRole("ACCOUNTANT", "FINANCE_MANAGER", "AUDITOR")
-                .requestMatchers("/api/v1/ifrs-reports/**").hasAnyRole("FINANCE_MANAGER", "REPORT_MANAGER", "AUDITOR")
-                
-                // Admin endpoints
-                .requestMatchers("/api/v1/admin/**").hasRole("SYSTEM_ADMIN")
+                // For all other API endpoints, just require a valid token (no specific roles for now)
+                .requestMatchers("/api/v1/**").authenticated()
                 
                 .anyRequest().authenticated()
             )

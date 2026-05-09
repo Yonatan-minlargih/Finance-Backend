@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -22,7 +23,7 @@ import java.util.UUID;
     @Index(name = "idx_approval_workflows_status", columnList = "status")
 })
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
@@ -82,6 +83,7 @@ public class ApprovalWorkflow extends BaseEntity {
     @Column(name = "comments", length = 2000)
     private String comments;
 
+    @Builder.Default
     @OneToMany(mappedBy = "approvalWorkflow", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<ApprovalStep> approvalSteps = new ArrayList<>();
 

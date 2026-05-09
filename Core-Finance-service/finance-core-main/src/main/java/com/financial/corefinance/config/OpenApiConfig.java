@@ -12,20 +12,18 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Configuration
 public class OpenApiConfig {
 
-    @Value("${server.port:8081}")
-    private String serverPort;
-
-    @Value("${server.servlet.context-path:/}")
-    private String contextPath;
+    @Value("${swagger.base-url:}")
+    private String swaggerBaseUrl;
 
     @Bean
     public OpenAPI coreFinanceOpenAPI() {
-        return new OpenAPI()
+        OpenAPI openAPI = new OpenAPI()
                 .info(new Info()
                         .title("Core Finance Service API")
                         .description("Central General Ledger Service for Financial Management System. This service provides comprehensive financial accounting capabilities including journal posting, chart of accounts management, budgeting, and IFRS reporting.")
@@ -36,14 +34,20 @@ public class OpenApiConfig {
                                 .url("https://finance.company.com"))
                         .license(new License()
                                 .name("MIT License")
-                                .url("https://opensource.org/licenses/MIT")))
-                .servers(List.of(
-                        new Server()
-                                .url("http://localhost:" + serverPort + normalizedContextPath())
-                                .description("Development Server"),
-                        new Server()
-                                .url("https://finance-api.company.com" + normalizedContextPath())
-                                .description("Production Server")))
+                                .url("https://opensource.org/licenses/MIT")));
+
+        List<Server> servers = new ArrayList<>();
+        
+        // If a base URL is provided via environment variable, use it. 
+        // Otherwise, it will default to the current host in the browser.
+        if (!swaggerBaseUrl.isBlank()) {
+            servers.add(new Server().url(swaggerBaseUrl).description("Configured Server"));
+        } else {
+            servers.add(new Server().url("/").description("Default Server (Relative)"));
+        }
+        
+        return openAPI
+                .servers(servers)
                 .components(new Components()
                         .addSecuritySchemes("bearerAuth", new SecurityScheme()
                                 .type(SecurityScheme.Type.HTTP)
@@ -57,12 +61,5 @@ public class OpenApiConfig {
                                 .description("Tenant identifier for multi-tenancy support")))
                 .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
                 .addSecurityItem(new SecurityRequirement().addList("tenantAuth"));
-    }
-
-    private String normalizedContextPath() {
-        if (contextPath == null || contextPath.isBlank() || "/".equals(contextPath.trim())) {
-            return "";
-        }
-        return contextPath.startsWith("/") ? contextPath : "/" + contextPath;
     }
 }
