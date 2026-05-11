@@ -161,7 +161,9 @@ public class RabbitMQConfig {
 
     @Bean
     public Jackson2JsonMessageConverter jacksonConverter(ObjectMapper mapper) {
-        return new Jackson2JsonMessageConverter(mapper);
+        Jackson2JsonMessageConverter converter = new Jackson2JsonMessageConverter(mapper);
+        converter.setAlwaysConvertToInferredType(true);
+        return converter;
     }
 
     @Bean
