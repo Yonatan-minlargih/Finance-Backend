@@ -39,6 +39,9 @@ rabbitmq:
   createFiscalYearQueue: finance.create.fiscal-year.queue
   closeFiscalYearQueue: finance.close.fiscal-year.queue
   generateReportQueue: finance.generate.report.queue
+  costEventsExchange: cost.events.exchange
+  costCalculatedQueue: finance.cost-calculated.queue
+  costCalculatedRoutingKey: cost.calculated
 
 eureka:
   client:

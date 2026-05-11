@@ -1,7 +1,6 @@
 package com.example.payroll_service.event;
 
 import com.example.payroll_service.dto.eventDto.LoanEventDto;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -14,7 +13,6 @@ import org.springframework.stereotype.Component;
 public class LoanEventProducer {
 
     private final RabbitTemplate rabbitTemplate;
-    private final ObjectMapper objectMapper;
 
     @Value("${rabbitmq.exchange.loan}")
     private String loanExchange;
@@ -30,8 +28,7 @@ public class LoanEventProducer {
 
     public void sendLoanCreatedEvent(LoanEventDto event) {
         try {
-            String eventJson = objectMapper.writeValueAsString(event);
-            rabbitTemplate.convertAndSend(loanExchange, loanCreatedRoutingKey, eventJson);
+            rabbitTemplate.convertAndSend(loanExchange, loanCreatedRoutingKey, event);
             log.info("Loan created event sent for loan id: {}", event.getId());
         } catch (Exception e) {
             log.error("Failed to send loan created event for loan id: {}", event.getId(), e);
@@ -40,8 +37,7 @@ public class LoanEventProducer {
 
     public void sendLoanUpdatedEvent(LoanEventDto event) {
         try {
-            String eventJson = objectMapper.writeValueAsString(event);
-            rabbitTemplate.convertAndSend(loanExchange, loanUpdatedRoutingKey, eventJson);
+            rabbitTemplate.convertAndSend(loanExchange, loanUpdatedRoutingKey, event);
             log.info("Loan updated event sent for loan id: {}", event.getId());
         } catch (Exception e) {
             log.error("Failed to send loan updated event for loan id: {}", event.getId(), e);
@@ -50,8 +46,7 @@ public class LoanEventProducer {
 
     public void sendLoanPaymentEvent(LoanEventDto event) {
         try {
-            String eventJson = objectMapper.writeValueAsString(event);
-            rabbitTemplate.convertAndSend(loanExchange, loanPaymentRoutingKey, eventJson);
+            rabbitTemplate.convertAndSend(loanExchange, loanPaymentRoutingKey, event);
             log.info("Loan payment event sent for loan id: {}", event.getId());
         } catch (Exception e) {
             log.error("Failed to send loan payment event for loan id: {}", event.getId(), e);
