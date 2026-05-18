@@ -20,7 +20,7 @@ public class PayrollRunResponse {
     private UUID id;
     private UUID tenantId;
     private LocalDate runDate;
-    private String fiscalPeriod;
+    private UUID periodId;
     private BigDecimal totalGross;
     private BigDecimal totalNet;
     private PayrollStatus status;

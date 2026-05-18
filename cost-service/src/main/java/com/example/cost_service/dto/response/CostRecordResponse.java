@@ -15,12 +15,15 @@ public class CostRecordResponse {
     private UUID id;
     private UUID tenantId;
     private UUID productId;
+    private String productName;
     private UUID costCenterId;
+    private String costCenterName;
     private BigDecimal materialCost;
     private BigDecimal laborCost;
     private BigDecimal overheadCost;
     private BigDecimal totalCost;
     private UUID periodId;
+    private String periodName;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private String createdBy;

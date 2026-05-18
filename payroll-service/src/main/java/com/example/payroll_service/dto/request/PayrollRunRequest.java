@@ -15,8 +15,8 @@ public class PayrollRunRequest {
     @NotNull(message = "Run date is required")
     private LocalDate runDate;
 
-    @NotBlank(message = "Fiscal period is required")
-    private String fiscalPeriod;
+    @NotNull(message = "Period ID is required")
+    private UUID periodId;
 
     private BigDecimal totalGross;
 

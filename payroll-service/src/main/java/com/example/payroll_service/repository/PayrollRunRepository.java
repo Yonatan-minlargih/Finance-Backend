@@ -23,12 +23,12 @@ public interface PayrollRunRepository extends JpaRepository<PayrollRun, UUID> {
 
     List<PayrollRun> findByTenantIdAndRunDateBetween(UUID tenantId, LocalDate startDate, LocalDate endDate);
 
-    boolean existsByTenantIdAndFiscalPeriod(UUID tenantId, String fiscalPeriod);
+    boolean existsByTenantIdAndPeriodId(UUID tenantId, UUID periodId);
 
-    boolean existsByTenantIdAndFiscalPeriodAndIdNot(UUID tenantId, String fiscalPeriod, UUID id);
+    boolean existsByTenantIdAndPeriodIdAndIdNot(UUID tenantId, UUID periodId, UUID id);
 
     @Query("select e from PayrollRun e where " +
            "e.tenantId = :tenantId AND " +
-           "(lower(e.fiscalPeriod) like lower(concat('%', :keyword, '%')))")
-    List<PayrollRun> searchByFiscalPeriod(@Param("tenantId") UUID tenantId, @Param("keyword") String keyword);
+           "e.periodId = :periodId")
+    List<PayrollRun> findByTenantIdAndPeriodId(@Param("tenantId") UUID tenantId, @Param("periodId") UUID periodId);
 }

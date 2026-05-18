@@ -259,6 +259,11 @@ public class FiscalYearService {
     }
 
     @Transactional(readOnly = true)
+    public List<AccountingPeriod> getAllAccountingPeriods(String tenantId) {
+        return accountingPeriodRepository.findByTenantIdOrderByStartDateDesc(tenantId);
+    }
+
+    @Transactional(readOnly = true)
     public List<AccountingPeriod> getAccountingPeriodsByFiscalYear(String tenantId, UUID fiscalYearId) {
         return accountingPeriodRepository.findByTenantIdAndFiscalYearIdOrderByPeriodNumber(tenantId, fiscalYearId);
     }

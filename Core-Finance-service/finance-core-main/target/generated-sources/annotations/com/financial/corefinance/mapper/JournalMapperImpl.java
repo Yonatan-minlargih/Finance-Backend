@@ -14,8 +14,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-05-11T11:46:08+0300",
-    comments = "version: 1.5.5.Final, compiler: javac, environment: Java 21.0.9 (Oracle Corporation)"
+    date = "2026-05-17T04:24:35+0300",
+    comments = "version: 1.5.5.Final, compiler: Eclipse JDT (IDE) 3.46.0.v20260407-0427, environment: Java 21.0.10 (Eclipse Adoptium)"
 )
 @Component
 public class JournalMapperImpl implements JournalMapper {
@@ -29,17 +29,17 @@ public class JournalMapperImpl implements JournalMapper {
         JournalHeader.JournalHeaderBuilder<?, ?> journalHeader = JournalHeader.builder();
 
         journalHeader.journalLines( mapJournalLines( request.getJournalLines() ) );
-        journalHeader.journalDate( request.getJournalDate() );
         journalHeader.accountingPeriodId( request.getAccountingPeriodId() );
-        journalHeader.journalType( request.getJournalType() );
-        journalHeader.referenceNumber( request.getReferenceNumber() );
-        journalHeader.referenceType( request.getReferenceType() );
-        journalHeader.referenceId( request.getReferenceId() );
-        journalHeader.description( request.getDescription() );
-        journalHeader.narration( request.getNarration() );
         journalHeader.autoReverse( request.getAutoReverse() );
         journalHeader.autoReverseDate( request.getAutoReverseDate() );
         journalHeader.batchNumber( request.getBatchNumber() );
+        journalHeader.description( request.getDescription() );
+        journalHeader.journalDate( request.getJournalDate() );
+        journalHeader.journalType( request.getJournalType() );
+        journalHeader.narration( request.getNarration() );
+        journalHeader.referenceId( request.getReferenceId() );
+        journalHeader.referenceNumber( request.getReferenceNumber() );
+        journalHeader.referenceType( request.getReferenceType() );
         journalHeader.sourceSystem( request.getSourceSystem() );
 
         return journalHeader.build();
@@ -54,25 +54,25 @@ public class JournalMapperImpl implements JournalMapper {
         JournalLine.JournalLineBuilder<?, ?> journalLine = JournalLine.builder();
 
         journalLine.accountId( request.getAccountId() );
-        journalLine.debitAmount( request.getDebitAmount() );
-        journalLine.creditAmount( request.getCreditAmount() );
-        journalLine.description( request.getDescription() );
-        journalLine.costCenterId( request.getCostCenterId() );
-        journalLine.departmentId( request.getDepartmentId() );
-        journalLine.projectId( request.getProjectId() );
-        journalLine.productId( request.getProductId() );
-        journalLine.locationId( request.getLocationId() );
         journalLine.analysisCode( request.getAnalysisCode() );
+        journalLine.costCenterId( request.getCostCenterId() );
+        journalLine.creditAmount( request.getCreditAmount() );
+        journalLine.currencyCode( request.getCurrencyCode() );
+        journalLine.debitAmount( request.getDebitAmount() );
+        journalLine.departmentId( request.getDepartmentId() );
+        journalLine.description( request.getDescription() );
+        journalLine.exchangeRate( request.getExchangeRate() );
+        journalLine.foreignCreditAmount( request.getForeignCreditAmount() );
+        journalLine.foreignDebitAmount( request.getForeignDebitAmount() );
+        journalLine.locationId( request.getLocationId() );
+        journalLine.productId( request.getProductId() );
+        journalLine.projectId( request.getProjectId() );
+        journalLine.referenceId( request.getReferenceId() );
         journalLine.referenceNumber( request.getReferenceNumber() );
         journalLine.referenceType( request.getReferenceType() );
-        journalLine.referenceId( request.getReferenceId() );
+        journalLine.taxAmount( request.getTaxAmount() );
         journalLine.taxCode( request.getTaxCode() );
         journalLine.taxRate( request.getTaxRate() );
-        journalLine.taxAmount( request.getTaxAmount() );
-        journalLine.currencyCode( request.getCurrencyCode() );
-        journalLine.exchangeRate( request.getExchangeRate() );
-        journalLine.foreignDebitAmount( request.getForeignDebitAmount() );
-        journalLine.foreignCreditAmount( request.getForeignCreditAmount() );
 
         return journalLine.build();
     }
@@ -87,41 +87,41 @@ public class JournalMapperImpl implements JournalMapper {
 
         journalHeaderResponse.journalId( journalHeader.getId() );
         journalHeaderResponse.journalLines( mapJournalLineResponses( journalHeader.getJournalLines() ) );
-        journalHeaderResponse.tenantId( journalHeader.getTenantId() );
-        journalHeaderResponse.journalNumber( journalHeader.getJournalNumber() );
-        journalHeaderResponse.createdAt( journalHeader.getCreatedAt() );
-        journalHeaderResponse.updatedAt( journalHeader.getUpdatedAt() );
-        journalHeaderResponse.createdBy( journalHeader.getCreatedBy() );
-        journalHeaderResponse.updatedBy( journalHeader.getUpdatedBy() );
-        journalHeaderResponse.version( journalHeader.getVersion() );
-        journalHeaderResponse.journalDate( journalHeader.getJournalDate() );
         journalHeaderResponse.accountingPeriodId( journalHeader.getAccountingPeriodId() );
-        journalHeaderResponse.journalType( journalHeader.getJournalType() );
-        journalHeaderResponse.referenceNumber( journalHeader.getReferenceNumber() );
-        journalHeaderResponse.referenceType( journalHeader.getReferenceType() );
-        journalHeaderResponse.referenceId( journalHeader.getReferenceId() );
-        journalHeaderResponse.description( journalHeader.getDescription() );
-        journalHeaderResponse.narration( journalHeader.getNarration() );
-        journalHeaderResponse.totalDebit( journalHeader.getTotalDebit() );
-        journalHeaderResponse.totalCredit( journalHeader.getTotalCredit() );
-        journalHeaderResponse.status( journalHeader.getStatus() );
-        journalHeaderResponse.postedAt( journalHeader.getPostedAt() );
-        journalHeaderResponse.postedBy( journalHeader.getPostedBy() );
         journalHeaderResponse.approvedAt( journalHeader.getApprovedAt() );
         journalHeaderResponse.approvedBy( journalHeader.getApprovedBy() );
-        journalHeaderResponse.rejectedAt( journalHeader.getRejectedAt() );
-        journalHeaderResponse.rejectedBy( journalHeader.getRejectedBy() );
-        journalHeaderResponse.rejectionReason( journalHeader.getRejectionReason() );
-        journalHeaderResponse.isReversed( journalHeader.getIsReversed() );
-        journalHeaderResponse.reversedBy( journalHeader.getReversedBy() );
-        journalHeaderResponse.reversedAt( journalHeader.getReversedAt() );
-        journalHeaderResponse.reversalReason( journalHeader.getReversalReason() );
-        journalHeaderResponse.originalJournalId( journalHeader.getOriginalJournalId() );
+        journalHeaderResponse.attachmentCount( journalHeader.getAttachmentCount() );
         journalHeaderResponse.autoReverse( journalHeader.getAutoReverse() );
         journalHeaderResponse.autoReverseDate( journalHeader.getAutoReverseDate() );
         journalHeaderResponse.batchNumber( journalHeader.getBatchNumber() );
+        journalHeaderResponse.createdAt( journalHeader.getCreatedAt() );
+        journalHeaderResponse.createdBy( journalHeader.getCreatedBy() );
+        journalHeaderResponse.description( journalHeader.getDescription() );
+        journalHeaderResponse.isReversed( journalHeader.getIsReversed() );
+        journalHeaderResponse.journalDate( journalHeader.getJournalDate() );
+        journalHeaderResponse.journalNumber( journalHeader.getJournalNumber() );
+        journalHeaderResponse.journalType( journalHeader.getJournalType() );
+        journalHeaderResponse.narration( journalHeader.getNarration() );
+        journalHeaderResponse.originalJournalId( journalHeader.getOriginalJournalId() );
+        journalHeaderResponse.postedAt( journalHeader.getPostedAt() );
+        journalHeaderResponse.postedBy( journalHeader.getPostedBy() );
+        journalHeaderResponse.referenceId( journalHeader.getReferenceId() );
+        journalHeaderResponse.referenceNumber( journalHeader.getReferenceNumber() );
+        journalHeaderResponse.referenceType( journalHeader.getReferenceType() );
+        journalHeaderResponse.rejectedAt( journalHeader.getRejectedAt() );
+        journalHeaderResponse.rejectedBy( journalHeader.getRejectedBy() );
+        journalHeaderResponse.rejectionReason( journalHeader.getRejectionReason() );
+        journalHeaderResponse.reversalReason( journalHeader.getReversalReason() );
+        journalHeaderResponse.reversedAt( journalHeader.getReversedAt() );
+        journalHeaderResponse.reversedBy( journalHeader.getReversedBy() );
         journalHeaderResponse.sourceSystem( journalHeader.getSourceSystem() );
-        journalHeaderResponse.attachmentCount( journalHeader.getAttachmentCount() );
+        journalHeaderResponse.status( journalHeader.getStatus() );
+        journalHeaderResponse.tenantId( journalHeader.getTenantId() );
+        journalHeaderResponse.totalCredit( journalHeader.getTotalCredit() );
+        journalHeaderResponse.totalDebit( journalHeader.getTotalDebit() );
+        journalHeaderResponse.updatedAt( journalHeader.getUpdatedAt() );
+        journalHeaderResponse.updatedBy( journalHeader.getUpdatedBy() );
+        journalHeaderResponse.version( journalHeader.getVersion() );
 
         return journalHeaderResponse.build();
     }
@@ -136,38 +136,38 @@ public class JournalMapperImpl implements JournalMapper {
 
         journalLineResponse.setAccountCode( journalLineAccountAccountCode( journalLine ) );
         journalLineResponse.setAccountName( journalLineAccountAccountName( journalLine ) );
-        journalLineResponse.setId( journalLine.getId() );
-        journalLineResponse.setTenantId( journalLine.getTenantId() );
+        journalLineResponse.setAccountId( journalLine.getAccountId() );
+        journalLineResponse.setAnalysisCode( journalLine.getAnalysisCode() );
+        journalLineResponse.setCostCenterId( journalLine.getCostCenterId() );
         journalLineResponse.setCreatedAt( journalLine.getCreatedAt() );
-        journalLineResponse.setUpdatedAt( journalLine.getUpdatedAt() );
         journalLineResponse.setCreatedBy( journalLine.getCreatedBy() );
-        journalLineResponse.setUpdatedBy( journalLine.getUpdatedBy() );
-        journalLineResponse.setVersion( journalLine.getVersion() );
+        journalLineResponse.setCreditAmount( journalLine.getCreditAmount() );
+        journalLineResponse.setCurrencyCode( journalLine.getCurrencyCode() );
+        journalLineResponse.setDebitAmount( journalLine.getDebitAmount() );
+        journalLineResponse.setDepartmentId( journalLine.getDepartmentId() );
+        journalLineResponse.setDescription( journalLine.getDescription() );
+        journalLineResponse.setExchangeRate( journalLine.getExchangeRate() );
+        journalLineResponse.setForeignCreditAmount( journalLine.getForeignCreditAmount() );
+        journalLineResponse.setForeignDebitAmount( journalLine.getForeignDebitAmount() );
+        journalLineResponse.setId( journalLine.getId() );
         journalLineResponse.setJournalHeaderId( journalLine.getJournalHeaderId() );
         journalLineResponse.setLineNumber( journalLine.getLineNumber() );
-        journalLineResponse.setAccountId( journalLine.getAccountId() );
-        journalLineResponse.setDebitAmount( journalLine.getDebitAmount() );
-        journalLineResponse.setCreditAmount( journalLine.getCreditAmount() );
-        journalLineResponse.setDescription( journalLine.getDescription() );
-        journalLineResponse.setCostCenterId( journalLine.getCostCenterId() );
-        journalLineResponse.setDepartmentId( journalLine.getDepartmentId() );
-        journalLineResponse.setProjectId( journalLine.getProjectId() );
-        journalLineResponse.setProductId( journalLine.getProductId() );
         journalLineResponse.setLocationId( journalLine.getLocationId() );
-        journalLineResponse.setAnalysisCode( journalLine.getAnalysisCode() );
-        journalLineResponse.setReferenceNumber( journalLine.getReferenceNumber() );
-        journalLineResponse.setReferenceType( journalLine.getReferenceType() );
-        journalLineResponse.setReferenceId( journalLine.getReferenceId() );
-        journalLineResponse.setTaxCode( journalLine.getTaxCode() );
-        journalLineResponse.setTaxRate( journalLine.getTaxRate() );
-        journalLineResponse.setTaxAmount( journalLine.getTaxAmount() );
-        journalLineResponse.setCurrencyCode( journalLine.getCurrencyCode() );
-        journalLineResponse.setExchangeRate( journalLine.getExchangeRate() );
-        journalLineResponse.setForeignDebitAmount( journalLine.getForeignDebitAmount() );
-        journalLineResponse.setForeignCreditAmount( journalLine.getForeignCreditAmount() );
+        journalLineResponse.setProductId( journalLine.getProductId() );
+        journalLineResponse.setProjectId( journalLine.getProjectId() );
         journalLineResponse.setReconciled( journalLine.getReconciled() );
         journalLineResponse.setReconciledAt( journalLine.getReconciledAt() );
         journalLineResponse.setReconciledBy( journalLine.getReconciledBy() );
+        journalLineResponse.setReferenceId( journalLine.getReferenceId() );
+        journalLineResponse.setReferenceNumber( journalLine.getReferenceNumber() );
+        journalLineResponse.setReferenceType( journalLine.getReferenceType() );
+        journalLineResponse.setTaxAmount( journalLine.getTaxAmount() );
+        journalLineResponse.setTaxCode( journalLine.getTaxCode() );
+        journalLineResponse.setTaxRate( journalLine.getTaxRate() );
+        journalLineResponse.setTenantId( journalLine.getTenantId() );
+        journalLineResponse.setUpdatedAt( journalLine.getUpdatedAt() );
+        journalLineResponse.setUpdatedBy( journalLine.getUpdatedBy() );
+        journalLineResponse.setVersion( journalLine.getVersion() );
 
         return journalLineResponse;
     }
@@ -206,14 +206,12 @@ public class JournalMapperImpl implements JournalMapper {
             return;
         }
 
-        journalHeader.setJournalDate( request.getJournalDate() );
         journalHeader.setAccountingPeriodId( request.getAccountingPeriodId() );
-        journalHeader.setJournalType( request.getJournalType() );
-        journalHeader.setReferenceNumber( request.getReferenceNumber() );
-        journalHeader.setReferenceType( request.getReferenceType() );
-        journalHeader.setReferenceId( request.getReferenceId() );
+        journalHeader.setAutoReverse( request.getAutoReverse() );
+        journalHeader.setAutoReverseDate( request.getAutoReverseDate() );
+        journalHeader.setBatchNumber( request.getBatchNumber() );
         journalHeader.setDescription( request.getDescription() );
-        journalHeader.setNarration( request.getNarration() );
+        journalHeader.setJournalDate( request.getJournalDate() );
         if ( journalHeader.getJournalLines() != null ) {
             List<JournalLine> list = journalLineRequestListToJournalLineList( request.getJournalLines() );
             if ( list != null ) {
@@ -230,9 +228,11 @@ public class JournalMapperImpl implements JournalMapper {
                 journalHeader.setJournalLines( list );
             }
         }
-        journalHeader.setAutoReverse( request.getAutoReverse() );
-        journalHeader.setAutoReverseDate( request.getAutoReverseDate() );
-        journalHeader.setBatchNumber( request.getBatchNumber() );
+        journalHeader.setJournalType( request.getJournalType() );
+        journalHeader.setNarration( request.getNarration() );
+        journalHeader.setReferenceId( request.getReferenceId() );
+        journalHeader.setReferenceNumber( request.getReferenceNumber() );
+        journalHeader.setReferenceType( request.getReferenceType() );
         journalHeader.setSourceSystem( request.getSourceSystem() );
     }
 

@@ -43,7 +43,9 @@ public class PayrollEventConsumer {
             costRecord.setMaterialCost(java.math.BigDecimal.ZERO);
             costRecord.setOverheadCost(java.math.BigDecimal.ZERO);
             costRecord.setTotalCost(event.getTotalGross());
-            costRecord.setPeriodId(event.getId()); // Using Payroll ID as reference
+            // Use the actual accounting period ID from the payroll run, fall back to payroll run ID if not set
+            UUID resolvedPeriodId = event.getPeriodId() != null ? event.getPeriodId() : event.getId();
+            costRecord.setPeriodId(resolvedPeriodId);
             costRecord.setCreatedBy("SYSTEM_EVENT_CONSUMER");
             costRecord.setCreatedAt(java.time.LocalDateTime.now());
             
@@ -55,7 +57,7 @@ public class PayrollEventConsumer {
             // Bridge the flow: Trigger a cost.calculated event for core-finance-service
             CostCalculatedEventDto calculatedEvent = new CostCalculatedEventDto();
             calculatedEvent.setTenantId(event.getTenantId());
-            calculatedEvent.setPeriodId(event.getId()); // Using Payroll ID as reference
+            calculatedEvent.setPeriodId(resolvedPeriodId); // Use the resolved accounting period ID
             calculatedEvent.setLaborCost(event.getTotalGross());
             calculatedEvent.setMaterialCost(java.math.BigDecimal.ZERO);
             calculatedEvent.setOverheadCost(java.math.BigDecimal.ZERO);

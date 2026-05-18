@@ -21,7 +21,7 @@ public class PayrollEventDto {
     private String eventType;
     private UUID employeeId;
     private LocalDate runDate;
-    private String fiscalPeriod;
+    private UUID periodId;
     private BigDecimal totalGross;
     private BigDecimal totalNet;
     private String status;

@@ -170,11 +170,20 @@ public class PeriodController {
                 .orElse(ResponseEntity.notFound().build());
     }
     @GetMapping("/accounting-periods/open")
-    // @PreAuthorize("hasRole('ACCOUNTANT') or hasRole('FINANCE_MANAGER') or hasRole('AUDITOR')")
     @Operation(summary = "Get open accounting periods", description = "Retrieves all open accounting periods")
     public ResponseEntity<List<AccountingPeriodResponse>> getOpenAccountingPeriods() {
         String tenantId = com.financial.corefinance.domain.base.TenantContext.getCurrentTenant();
         List<AccountingPeriodResponse> periods = fiscalYearService.getOpenAccountingPeriods(tenantId).stream()
+                .map(this::toAccountingPeriodResponse)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(periods);
+    }
+
+    @GetMapping("/accounting-periods")
+    @Operation(summary = "Get all accounting periods", description = "Retrieves all accounting periods regardless of status")
+    public ResponseEntity<List<AccountingPeriodResponse>> getAllAccountingPeriods() {
+        String tenantId = com.financial.corefinance.domain.base.TenantContext.getCurrentTenant();
+        List<AccountingPeriodResponse> periods = fiscalYearService.getAllAccountingPeriods(tenantId).stream()
                 .map(this::toAccountingPeriodResponse)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(periods);

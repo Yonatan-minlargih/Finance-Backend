@@ -92,14 +92,14 @@ public class PayrollRunController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    @GetMapping("/search")
-    public ResponseEntity<?> searchByFiscalPeriod(
+    @GetMapping("/period/{period-id}")
+    public ResponseEntity<?> getPayrollRunsByPeriodId(
             @PathVariable("tenant-id") UUID tenantId,
-            @RequestParam String keyword) {
+            @PathVariable("period-id") UUID periodId) {
 
         // permissionEvaluator.getPayrollRunPermission(tenantId);
 
-        List<PayrollRunResponse> response = payrollRunService.searchByFiscalPeriod(tenantId, keyword);
+        List<PayrollRunResponse> response = payrollRunService.getPayrollRunsByPeriodId(tenantId, periodId);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 

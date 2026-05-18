@@ -1,5 +1,7 @@
 package com.example.payroll_service.utility;
 
+import com.example.payroll_service.client.PeriodServiceClient;
+import com.example.payroll_service.dto.clientDto.PeriodDto;
 import com.example.payroll_service.enums.LoanStatus;
 import com.example.payroll_service.enums.PayrollStatus;
 import com.example.payroll_service.exception.InvalidPayrollStateException;
@@ -13,18 +15,21 @@ import com.example.payroll_service.repository.EarningDeductionTypeRepository;
 import com.example.payroll_service.repository.PayrollDetailRepository;
 import com.example.payroll_service.repository.PayrollRunRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class ValidationUtil {
 
     private final PayrollRunRepository payrollRunRepository;
     private final PayrollDetailRepository payrollDetailRepository;
     private final EmployeeLoanRepository employeeLoanRepository;
     private final EarningDeductionTypeRepository earningDeductionTypeRepository;
+    private final PeriodServiceClient periodServiceClient;
 
     public PayrollRun getPayrollRunById(UUID tenantId, UUID id) {
         return payrollRunRepository.findByTenantIdAndId(tenantId, id)
@@ -87,6 +92,19 @@ public class ValidationUtil {
             throw new InvalidPayrollStateException(
                     "Payroll can only be posted from APPROVED state. Current state: " + payrollRun.getStatus()
             );
+        }
+    }
+
+    public PeriodDto getPeriodById(UUID tenantId, UUID periodId) {
+        try {
+            PeriodDto period = periodServiceClient.getPeriodById(periodId);
+            if (period == null || !period.getTenantId().equals(tenantId.toString())) {
+                throw new ResourceNotFoundException("Period not found for this tenant");
+            }
+            return period;
+        } catch (Exception e) {
+            log.error("Error validating period {}: {}", periodId, e.getMessage());
+            throw new ResourceNotFoundException("Period validation failed: " + e.getMessage());
         }
     }
 }
