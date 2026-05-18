@@ -97,6 +97,15 @@ public class NumberingSeries extends BaseEntity {
         }
     }
     public String generateNextNumber() {
+        if (format != null && !format.isEmpty()) {
+            String formatted = format.replace("{NUMBER:" + numberLength + "}",
+                    String.format("%0" + numberLength + "d", currentNumber));
+            formatted = formatted.replace("{YYYY}", String.valueOf(java.time.Year.now()));
+            formatted = formatted.replace("{MM}", String.format("%02d", java.time.LocalDate.now().getMonthValue()));
+            formatted = formatted.replace("{DD}", String.format("%02d", java.time.LocalDate.now().getDayOfMonth()));
+            return formatted;
+        }
+
         StringBuilder numberBuilder = new StringBuilder();
 
         if (prefix != null && !prefix.isEmpty()) {
@@ -104,17 +113,7 @@ public class NumberingSeries extends BaseEntity {
             numberBuilder.append(separator);
         }
 
-        // Add date components if needed
-        if (format != null) {
-            String formatted = format.replace("{NUMBER:" + numberLength + "}",
-                    String.format("%0" + numberLength + "d", currentNumber));
-            formatted = formatted.replace("{YYYY}", String.valueOf(java.time.Year.now()));
-            formatted = formatted.replace("{MM}", String.format("%02d", java.time.LocalDate.now().getMonthValue()));
-            formatted = formatted.replace("{DD}", String.format("%02d", java.time.LocalDate.now().getDayOfMonth()));
-            numberBuilder.append(formatted);
-        } else {
-            numberBuilder.append(String.format("%0" + numberLength + "d", currentNumber));
-        }
+        numberBuilder.append(String.format("%0" + numberLength + "d", currentNumber));
 
         if (suffix != null && !suffix.isEmpty()) {
             numberBuilder.append(separator);

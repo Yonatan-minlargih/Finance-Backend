@@ -25,7 +25,7 @@ public class PayrollRun extends Base {
     private LocalDate runDate;
 
     @Column(nullable = false)
-    private String fiscalPeriod;
+    private UUID periodId;
 
     private BigDecimal totalGross;
 

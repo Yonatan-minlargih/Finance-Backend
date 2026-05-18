@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -36,7 +37,7 @@ public class PostingEngineService {
     private final FinanceEventService financeEventService;
 
     @Transactional
-    public JournalHeader createAndPostJournal(@Valid @NotNull JournalHeader journalHeader) {
+    public JournalHeader createAndPostJournal(@NotNull JournalHeader journalHeader) {
         log.info("Creating and posting journal: {}", journalHeader.getDescription());
         
         hydrateDefaults(journalHeader);
@@ -62,7 +63,7 @@ public class PostingEngineService {
     }
 
     @Transactional
-    public JournalHeader saveDraftJournal(@Valid @NotNull JournalHeader journalHeader) {
+    public JournalHeader saveDraftJournal(@NotNull JournalHeader journalHeader) {
         log.info("Saving draft journal: {}", journalHeader.getDescription());
         
         hydrateDefaults(journalHeader);
@@ -206,6 +207,28 @@ public class PostingEngineService {
         String tenantId = journalHeader.getTenantId();
         String seriesCode = "JOURNAL";
         
+        Optional<NumberingSeries> optionalSeries = numberingSeriesRepository.findByTenantIdAndSeriesCode(tenantId, seriesCode);
+        if (optionalSeries.isEmpty()) {
+            NumberingSeries newSeries = NumberingSeries.builder()
+                .tenantId(tenantId)
+                .seriesCode(seriesCode)
+                .seriesName("Journal Entries")
+                .description("Auto-generated series for Journal Entries")
+                .prefix("JE")
+                .separator("-")
+                .currentNumber(1L)
+                .startNumber(1L)
+                .numberLength(6)
+                .isActive(true)
+                .allowManualOverride(false)
+                .build();
+            try {
+                numberingSeriesRepository.saveAndFlush(newSeries);
+            } catch (Exception e) {
+                log.warn("Failed to save default numbering series: {}", e.getMessage());
+            }
+        }
+
         NumberingSeries numberingSeries = numberingSeriesRepository
             .findByTenantIdAndSeriesCodeForUpdate(tenantId, seriesCode)
             .orElseThrow(() -> new IllegalArgumentException("Journal numbering series not configured"));

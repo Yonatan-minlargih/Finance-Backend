@@ -43,7 +43,9 @@ public class CostRecordMapper {
         response.setId(costRecord.getId());
         response.setTenantId(costRecord.getTenantId());
         response.setProductId(costRecord.getProduct() != null ? costRecord.getProduct().getId() : null);
+        response.setProductName(costRecord.getProduct() != null ? costRecord.getProduct().getName() : null);
         response.setCostCenterId(costRecord.getCostCenter() != null ? costRecord.getCostCenter().getId() : null);
+        response.setCostCenterName(costRecord.getCostCenter() != null ? costRecord.getCostCenter().getName() : null);
         response.setMaterialCost(costRecord.getMaterialCost());
         response.setLaborCost(costRecord.getLaborCost());
         response.setOverheadCost(costRecord.getOverheadCost());

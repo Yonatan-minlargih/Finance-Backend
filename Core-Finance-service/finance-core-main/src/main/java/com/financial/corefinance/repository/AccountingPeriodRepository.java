@@ -20,6 +20,8 @@ public interface AccountingPeriodRepository extends JpaRepository<AccountingPeri
 
     List<AccountingPeriod> findByTenantIdAndIsOpenTrue(String tenantId);
 
+    List<AccountingPeriod> findByTenantIdOrderByStartDateDesc(String tenantId);
+
     List<AccountingPeriod> findByTenantIdAndIsClosedFalse(String tenantId);
 
     @Query("SELECT ap FROM AccountingPeriod ap WHERE ap.tenantId = :tenantId AND :date BETWEEN ap.startDate AND ap.endDate")

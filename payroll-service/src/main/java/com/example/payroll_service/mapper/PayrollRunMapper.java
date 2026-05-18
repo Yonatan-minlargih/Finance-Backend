@@ -14,7 +14,7 @@ public class PayrollRunMapper {
     public PayrollRun mapToEntity(PayrollRunRequest request, UUID tenantId) {
         PayrollRun payrollRun = new PayrollRun();
         payrollRun.setRunDate(request.getRunDate());
-        payrollRun.setFiscalPeriod(request.getFiscalPeriod());
+        payrollRun.setPeriodId(request.getPeriodId());
         payrollRun.setTotalGross(request.getTotalGross());
         payrollRun.setTotalNet(request.getTotalNet());
         payrollRun.setStatus(request.getStatus());
@@ -27,7 +27,7 @@ public class PayrollRunMapper {
 
     public PayrollRun updateEntity(PayrollRun payrollRun, PayrollRunRequest request) {
         payrollRun.setRunDate(request.getRunDate());
-        payrollRun.setFiscalPeriod(request.getFiscalPeriod());
+        payrollRun.setPeriodId(request.getPeriodId());
         payrollRun.setTotalGross(request.getTotalGross());
         payrollRun.setTotalNet(request.getTotalNet());
         payrollRun.setStatus(request.getStatus());
@@ -42,7 +42,7 @@ public class PayrollRunMapper {
                 .id(payrollRun.getId())
                 .tenantId(payrollRun.getTenantId())
                 .runDate(payrollRun.getRunDate())
-                .fiscalPeriod(payrollRun.getFiscalPeriod())
+                .periodId(payrollRun.getPeriodId())
                 .totalGross(payrollRun.getTotalGross())
                 .totalNet(payrollRun.getTotalNet())
                 .status(payrollRun.getStatus())
@@ -62,7 +62,7 @@ public class PayrollRunMapper {
                 .tenantId(payrollRun.getTenantId())
                 .eventType("PAYROLL_RUN")
                 .runDate(payrollRun.getRunDate())
-                .fiscalPeriod(payrollRun.getFiscalPeriod())
+                .periodId(payrollRun.getPeriodId())
                 .totalGross(payrollRun.getTotalGross())
                 .totalNet(payrollRun.getTotalNet())
                 .status(payrollRun.getStatus() != null ? payrollRun.getStatus().name() : null)

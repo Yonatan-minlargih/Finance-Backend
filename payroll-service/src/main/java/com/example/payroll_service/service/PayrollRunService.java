@@ -31,13 +31,17 @@ public class PayrollRunService {
     private final PayrollRunMapper payrollRunMapper;
     private final ValidationUtil validationUtil;
     private final PayrollEventProducer payrollEventProducer;
+    private final com.example.payroll_service.repository.PayrollDetailRepository payrollDetailRepository;
 
     @Transactional
     public PayrollRunResponse createPayrollRun(UUID tenantId, PayrollRunRequest request, String username) {
         validationUtil.validateTenantAccess(tenantId);
 
-        if (payrollRunRepository.existsByTenantIdAndFiscalPeriod(tenantId, request.getFiscalPeriod())) {
-            throw new ResourceExistsException("PayrollRun", "fiscalPeriod", request.getFiscalPeriod());
+        // Validate period exists and belongs to tenant
+        validationUtil.getPeriodById(tenantId, request.getPeriodId());
+
+        if (payrollRunRepository.existsByTenantIdAndPeriodId(tenantId, request.getPeriodId())) {
+            throw new ResourceExistsException("PayrollRun", "periodId", request.getPeriodId());
         }
 
         PayrollRun payrollRun = payrollRunMapper.mapToEntity(request, tenantId);
@@ -56,8 +60,11 @@ public class PayrollRunService {
         validationUtil.validateTenantAccess(tenantId);
         PayrollRun payrollRun = validationUtil.getPayrollRunById(tenantId, id);
 
-        if (payrollRunRepository.existsByTenantIdAndFiscalPeriodAndIdNot(tenantId, request.getFiscalPeriod(), id)) {
-            throw new ResourceExistsException("PayrollRun", "fiscalPeriod", request.getFiscalPeriod());
+        // Validate period exists and belongs to tenant
+        validationUtil.getPeriodById(tenantId, request.getPeriodId());
+
+        if (payrollRunRepository.existsByTenantIdAndPeriodIdAndIdNot(tenantId, request.getPeriodId(), id)) {
+            throw new ResourceExistsException("PayrollRun", "periodId", request.getPeriodId());
         }
 
         validationUtil.validatePayrollStateForProcessing(payrollRun);
@@ -119,9 +126,11 @@ public class PayrollRunService {
                 .collect(Collectors.toList());
     }
 
-    public List<PayrollRunResponse> searchByFiscalPeriod(UUID tenantId, String keyword) {
+    public List<PayrollRunResponse> getPayrollRunsByPeriodId(UUID tenantId, UUID periodId) {
         validationUtil.validateTenantAccess(tenantId);
-        List<PayrollRun> payrollRuns = payrollRunRepository.searchByFiscalPeriod(tenantId, keyword);
+        // Validate period exists and belongs to tenant
+        validationUtil.getPeriodById(tenantId, periodId);
+        List<PayrollRun> payrollRuns = payrollRunRepository.findByTenantIdAndPeriodId(tenantId, periodId);
         return payrollRuns.stream()
                 .map(payrollRunMapper::mapToDto)
                 .collect(Collectors.toList());
@@ -140,6 +149,26 @@ public class PayrollRunService {
         payrollRun = payrollRunRepository.save(payrollRun);
 
         try {
+            // Dynamically aggregate gross and net from the recorded payroll details
+            List<com.example.payroll_service.model.PayrollDetail> details = 
+                payrollDetailRepository.findByTenantIdAndPayrollRun(tenantId, payrollRun);
+
+            java.math.BigDecimal totalGross = java.math.BigDecimal.ZERO;
+            java.math.BigDecimal totalNet = java.math.BigDecimal.ZERO;
+
+            if (details != null) {
+                for (com.example.payroll_service.model.PayrollDetail detail : details) {
+                    if (detail.getGrossSalary() != null) {
+                        totalGross = totalGross.add(detail.getGrossSalary());
+                    }
+                    if (detail.getNetSalary() != null) {
+                        totalNet = totalNet.add(detail.getNetSalary());
+                    }
+                }
+            }
+
+            payrollRun.setTotalGross(totalGross);
+            payrollRun.setTotalNet(totalNet);
             payrollRun.setStatus(PayrollStatus.PROCESSED);
             payrollRun.setUpdatedBy(username);
             payrollRun.setUpdatedByUsername(username);
@@ -147,7 +176,8 @@ public class PayrollRunService {
 
             payrollEventProducer.sendPayrollProcessedEvent(payrollRunMapper.mapToEvent(payrollRun));
 
-            log.info("Payroll processed with id: {} for tenant: {}", id, tenantId);
+            log.info("Payroll processed with aggregated totals (Gross: {}, Net: {}) with id: {} for tenant: {}", 
+                    totalGross, totalNet, id, tenantId);
         } catch (Exception e) {
             payrollRun.setStatus(PayrollStatus.CANCELLED);
             payrollRun.setUpdatedBy(username);

@@ -16,13 +16,17 @@ public class ProfitabilityAnalysisResponse {
     private UUID id;
     private UUID tenantId;
     private UUID productId;
+    private String productName;
     private UUID costCenterId;
+    private String costCenterName;
     private UUID profitCenterId;
+    private String profitCenterName;
     private BigDecimal revenue;
     private BigDecimal cogs;
     private BigDecimal grossProfit;
     private LocalDate analysisDate;
     private UUID periodId;
+    private String periodName;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private String createdBy;

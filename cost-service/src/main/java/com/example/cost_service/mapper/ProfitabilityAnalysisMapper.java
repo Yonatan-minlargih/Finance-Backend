@@ -35,8 +35,11 @@ public class ProfitabilityAnalysisMapper {
         response.setId(profitabilityAnalysis.getId());
         response.setTenantId(profitabilityAnalysis.getTenantId());
         response.setProductId(profitabilityAnalysis.getProduct() != null ? profitabilityAnalysis.getProduct().getId() : null);
+        response.setProductName(profitabilityAnalysis.getProduct() != null ? profitabilityAnalysis.getProduct().getName() : null);
         response.setCostCenterId(profitabilityAnalysis.getCostCenter() != null ? profitabilityAnalysis.getCostCenter().getId() : null);
+        response.setCostCenterName(profitabilityAnalysis.getCostCenter() != null ? profitabilityAnalysis.getCostCenter().getName() : null);
         response.setProfitCenterId(profitabilityAnalysis.getProfitCenter() != null ? profitabilityAnalysis.getProfitCenter().getId() : null);
+        response.setProfitCenterName(profitabilityAnalysis.getProfitCenter() != null ? profitabilityAnalysis.getProfitCenter().getName() : null);
         response.setRevenue(profitabilityAnalysis.getRevenue());
         response.setCogs(profitabilityAnalysis.getCogs());
         response.setGrossProfit(profitabilityAnalysis.getGrossProfit());
