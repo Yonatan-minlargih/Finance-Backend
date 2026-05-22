@@ -277,6 +277,37 @@ public class IFRSReportController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/{reportId}/lines")
+    @Operation(summary = "Get report lines", description = "Retrieves the structured lines/figures for a financial report")
+    public ResponseEntity<List<java.util.Map<String, Object>>> getReportLines(
+            @Parameter(description = "Report ID") @PathVariable UUID reportId) {
+        log.info("Retrieving lines for report: {}", reportId);
+        Optional<FinancialReport> reportOpt = financialReportRepository.findById(reportId);
+        if (reportOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        List<java.util.Map<String, Object>> result = reportOpt.get().getReportLines().stream()
+                .sorted(java.util.Comparator.comparing(com.financial.corefinance.domain.entity.ReportLine::getLineNumber))
+                .map(line -> {
+                    java.util.Map<String, Object> map = new java.util.HashMap<>();
+                    map.put("id", line.getId());
+                    map.put("lineNumber", line.getLineNumber());
+                    map.put("lineType", line.getLineType());
+                    map.put("lineDescription", line.getLineDescription());
+                    map.put("currentPeriodAmount", line.getCurrentPeriodAmount());
+                    map.put("priorPeriodAmount", line.getPriorPeriodAmount());
+                    map.put("ytdAmount", line.getYtdAmount());
+                    map.put("priorYtdAmount", line.getPriorYtdAmount());
+                    map.put("indentationLevel", line.getIndentationLevel());
+                    map.put("isBold", line.getIsBold());
+                    map.put("isItalic", line.getIsItalic());
+                    return map;
+                }).collect(java.util.stream.Collectors.toList());
+
+        return ResponseEntity.ok(result);
+    }
+
     private FinancialReport toFinancialReportEntity(FinancialReportRequest request) {
         FinancialReport report = new FinancialReport();
         report.setTenantId(request.getTenantId());
