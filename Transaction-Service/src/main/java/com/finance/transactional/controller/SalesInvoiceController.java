@@ -63,4 +63,25 @@ public class SalesInvoiceController {
         service.deleteSalesInvoice(tenantId, id);
         return ResponseEntity.status(HttpStatus.OK).body("SalesInvoice deleted successfully!");
     }
+
+    @PostMapping("/approve/{id}")
+    public ResponseEntity<?> approveSalesInvoice(
+            @PathVariable UUID tenantId,
+            @PathVariable UUID id) {
+
+        SalesInvoiceDto response = service.approveSalesInvoice(tenantId, id);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @GetMapping("/aging")
+    public ResponseEntity<?> getAgingAnalysis(
+            @PathVariable UUID tenantId,
+            @RequestParam(required = false) java.time.LocalDate asOfDate) {
+        
+        if (asOfDate == null) {
+            asOfDate = java.time.LocalDate.now();
+        }
+        java.util.Map<String, java.math.BigDecimal> response = service.getAgingAnalysis(tenantId, asOfDate);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
 }

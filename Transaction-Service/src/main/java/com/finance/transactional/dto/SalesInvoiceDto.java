@@ -18,10 +18,12 @@ public class SalesInvoiceDto {
 
     private String invoiceNumber;
     private UUID customerId;
+    private String customerName;
     private LocalDate invoiceDate;
     private LocalDate dueDate;
     private BigDecimal totalAmount;
     private BigDecimal taxAmount;
     private String currency;
     private SalesInvoice.SalesInvoiceStatus status;
+    private Boolean isMatched;
 }

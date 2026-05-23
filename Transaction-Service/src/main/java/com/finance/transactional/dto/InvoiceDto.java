@@ -26,5 +26,6 @@ public class InvoiceDto {
     private BigDecimal taxAmount;
     private String currency;
     private Invoice.InvoiceStatus status;
+    private Invoice.InvoiceType invoiceType;
     private List<InvoiceLineDto> lines;
 }

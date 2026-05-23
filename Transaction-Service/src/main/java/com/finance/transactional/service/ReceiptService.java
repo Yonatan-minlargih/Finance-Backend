@@ -37,12 +37,24 @@ public class ReceiptService {
     public ReceiptDto updateReceipt(UUID tenantId, UUID id, ReceiptDto dto) {
         Receipt existing = getExistingReceipt(tenantId, id);
         Receipt updated = mapper.toEntity(dto);
-        updated.setId(existing.getId());
-        updated.setTenantId(tenantId);
-        updated.setCreatedAt(existing.getCreatedAt());
-        updated.setCreatedBy(existing.getCreatedBy());
-        updated = repository.save(updated);
-        return mapper.toDto(updated);
+
+        existing.setReceiptNumber(updated.getReceiptNumber());
+        if (updated.getCustomer() != null && updated.getCustomer().getId() != null) {
+            existing.setCustomer(updated.getCustomer());
+        }
+        if (updated.getBankAccount() != null && updated.getBankAccount().getId() != null) {
+            existing.setBankAccount(updated.getBankAccount());
+        }
+        existing.setReceiptDate(updated.getReceiptDate());
+        existing.setAmount(updated.getAmount());
+        existing.setPaymentMethod(updated.getPaymentMethod());
+        existing.setReferenceNumber(updated.getReferenceNumber());
+        if (updated.getStatus() != null) {
+            existing.setStatus(updated.getStatus());
+        }
+
+        Receipt saved = repository.save(existing);
+        return mapper.toDto(saved);
     }
 
     @Transactional(readOnly = true)
@@ -55,6 +67,22 @@ public class ReceiptService {
         return repository.findByTenantId(tenantId).stream()
                 .map(mapper::toDto)
                 .toList();
+    }
+
+    @Transactional
+    public ReceiptDto postReceipt(UUID tenantId, UUID id) {
+        Receipt receipt = getExistingReceipt(tenantId, id);
+        if (receipt.getStatus() != Receipt.ReceiptStatus.DRAFT) {
+            throw new IllegalStateException("Only DRAFT receipts can be posted.");
+        }
+        receipt.setStatus(Receipt.ReceiptStatus.POSTED);
+        Receipt saved = repository.save(receipt);
+        ReceiptDto resultDto = mapper.toDto(saved);
+
+        // Publish event for General Ledger integration
+        domainEventPublisher.publish("receipt-posted", resultDto);
+
+        return resultDto;
     }
 
     @Transactional

@@ -51,7 +51,10 @@ public class SalesInvoice extends BaseTenantEntity {
     @Column(name = "status", length = 50)
     private SalesInvoiceStatus status;
 
+    @Column(name = "is_matched")
+    private Boolean isMatched = false;
+
     public enum SalesInvoiceStatus {
-        DRAFT, ISSUED, PAID, PARTIALLY_PAID, CANCELLED
+        DRAFT, ISSUED, PAID, PARTIALLY_PAID, CANCELLED, ON_HOLD
     }
 }

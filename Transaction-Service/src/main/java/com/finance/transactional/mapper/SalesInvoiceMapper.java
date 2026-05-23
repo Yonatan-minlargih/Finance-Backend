@@ -11,6 +11,7 @@ import org.mapstruct.MappingConstants;
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface SalesInvoiceMapper {
     @Mapping(source = "customer.id", target = "customerId")
+    @Mapping(source = "customer.customerName", target = "customerName")
     SalesInvoiceDto toDto(SalesInvoice entity);
 
     @Mapping(source = "customerId", target = "customer")

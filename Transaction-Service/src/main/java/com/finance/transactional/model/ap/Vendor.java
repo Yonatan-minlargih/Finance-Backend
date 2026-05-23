@@ -38,12 +38,34 @@ public class Vendor extends BaseTenantEntity {
     @Column(name = "contact_phone", length = 50)
     private String contactPhone;
 
+    @Column(name = "contact_person", length = 255)
+    private String contactPerson;
+
+    @Column(name = "vat_number", length = 50)
+    private String vatNumber;
+
+    @Column(name = "bank_account_number", length = 100)
+    private String bankAccountNumber;
+
+    @Column(name = "default_currency", length = 10)
+    private String defaultCurrency = "ETB";
+
     @Column(name = "payment_terms", length = 100)
     private String paymentTerms;
 
     @Column(name = "is_active")
     private Boolean isActive = true;
 
+    @Column(name = "classification", length = 100)
+    private String classification = "Standard";
+
+    @Column(name = "payment_priority", length = 50)
+    private String paymentPriority = "Medium";
+
+    @Column(name = "emd_waiver")
+    private Boolean emdWaiver = false;
+
     @OneToMany(mappedBy = "vendor", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private List<VendorAddress> addresses = new ArrayList<>();
+
 }

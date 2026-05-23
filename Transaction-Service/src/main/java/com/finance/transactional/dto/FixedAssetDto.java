@@ -19,6 +19,7 @@ public class FixedAssetDto {
     private String assetCode;
     private String assetName;
     private String assetCategory;
+    private String costCenterCode;
     private LocalDate acquisitionDate;
     private BigDecimal acquisitionCost;
     private BigDecimal salvageValue;
@@ -26,5 +27,7 @@ public class FixedAssetDto {
     private String depreciationMethod;
     private BigDecimal accumulatedDepreciation;
     private BigDecimal netBookValue;
+    private LocalDate lastInventoriedDate;
+    private LocalDate reclassificationDate;
     private FixedAsset.AssetStatus status;
 }

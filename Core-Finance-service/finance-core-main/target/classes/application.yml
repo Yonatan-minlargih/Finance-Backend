@@ -42,6 +42,12 @@ rabbitmq:
   costEventsExchange: cost.events.exchange
   costCalculatedQueue: finance.cost-calculated.queue
   costCalculatedRoutingKey: cost.calculated
+  transactionalEventsExchange: transactional-exchange
+  invoiceApprovedQueue: invoice-approved-queue
+  paymentPostedQueue: payment-posted-queue
+  salesInvoiceApprovedQueue: sales-invoice-approved-queue
+  receiptPostedQueue: receipt-posted-queue
+
 
 eureka:
   client:

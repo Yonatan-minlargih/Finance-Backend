@@ -20,5 +20,8 @@ public class CustomerDto {
     private String contactPhone;
     private Double creditLimit;
     private String paymentTerms;
+    private String defaultCurrency;
     private Boolean isActive;
+    private String status;
+    private String collectionsNotes;
 }

@@ -53,7 +53,9 @@ spring:
       asset-transaction-created-queue: asset-transaction-created-queue
       bank-transaction-created-queue: bank-transaction-created-queue
       sales-invoice-created-queue: sales-invoice-created-queue
+      sales-invoice-approved-queue: sales-invoice-approved-queue
       receipt-created-queue: receipt-created-queue
+      receipt-posted-queue: receipt-posted-queue
       purchase-order-created-queue: purchase-order-created-queue
       vendor-created-queue: vendor-created-queue
       customer-created-queue: customer-created-queue

@@ -23,5 +23,6 @@ public class ReceiptDto {
     private BigDecimal amount;
     private String paymentMethod;
     private String referenceNumber;
+    private com.finance.transactional.model.ar.Receipt.ReceiptStatus status;
     private List<ReceiptAllocationDto> allocations;
 }

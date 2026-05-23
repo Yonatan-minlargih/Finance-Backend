@@ -5,6 +5,7 @@ import com.finance.transactional.service.BankAccountService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -62,5 +63,19 @@ public class BankAccountController {
 
         service.deleteBankAccount(tenantId, id);
         return ResponseEntity.status(HttpStatus.OK).body("BankAccount deleted successfully!");
+    }
+
+    @PostMapping("/import")
+    public ResponseEntity<Map<String, Object>> importBankAccounts(
+            @PathVariable UUID tenantId) {
+
+        return ResponseEntity.status(HttpStatus.OK).body(service.importBankAccounts(tenantId));
+    }
+
+    @PostMapping("/bulk-toggle-status")
+    public ResponseEntity<Map<String, Object>> bulkToggleStatus(
+            @PathVariable UUID tenantId) {
+
+        return ResponseEntity.status(HttpStatus.OK).body(service.bulkToggleStatus(tenantId));
     }
 }

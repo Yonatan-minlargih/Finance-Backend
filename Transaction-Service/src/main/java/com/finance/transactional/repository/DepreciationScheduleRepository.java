@@ -13,4 +13,6 @@ public interface DepreciationScheduleRepository extends JpaRepository<Depreciati
     List<DepreciationSchedule> findByTenantId(UUID tenantId);
 
     Optional<DepreciationSchedule> findByTenantIdAndId(UUID tenantId, UUID id);
+
+    List<DepreciationSchedule> findByTenantIdAndIsPostedFalse(UUID tenantId);
 }

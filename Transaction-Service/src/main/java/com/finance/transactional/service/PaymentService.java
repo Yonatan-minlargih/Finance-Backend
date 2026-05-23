@@ -37,12 +37,26 @@ public class PaymentService {
     public PaymentDto updatePayment(UUID tenantId, UUID id, PaymentDto dto) {
         Payment existing = getExistingPayment(tenantId, id);
         Payment updated = mapper.toEntity(dto);
-        updated.setId(existing.getId());
-        updated.setTenantId(tenantId);
-        updated.setCreatedAt(existing.getCreatedAt());
-        updated.setCreatedBy(existing.getCreatedBy());
-        updated = repository.save(updated);
-        return mapper.toDto(updated);
+        
+        existing.setPaymentNumber(updated.getPaymentNumber());
+        existing.setVendor(updated.getVendor());
+        existing.setBankAccount(updated.getBankAccount());
+        existing.setPaymentDate(updated.getPaymentDate());
+        existing.setAmount(updated.getAmount());
+        existing.setPaymentMethod(updated.getPaymentMethod());
+        
+        boolean wasCleared = existing.getReferenceNumber() != null && !existing.getReferenceNumber().isBlank();
+        existing.setReferenceNumber(updated.getReferenceNumber());
+        boolean isCleared = existing.getReferenceNumber() != null && !existing.getReferenceNumber().isBlank();
+
+        Payment saved = repository.save(existing);
+        PaymentDto resultDto = mapper.toDto(saved);
+
+        if (isCleared && !wasCleared) {
+            domainEventPublisher.publish("payment-posted", resultDto);
+        }
+
+        return resultDto;
     }
 
     @Transactional(readOnly = true)
