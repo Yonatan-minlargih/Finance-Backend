@@ -63,4 +63,13 @@ public class ReceiptController {
         service.deleteReceipt(tenantId, id);
         return ResponseEntity.status(HttpStatus.OK).body("Receipt deleted successfully!");
     }
+
+    @PostMapping("/post/{id}")
+    public ResponseEntity<?> postReceipt(
+            @PathVariable UUID tenantId,
+            @PathVariable UUID id) {
+
+        ReceiptDto response = service.postReceipt(tenantId, id);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
 }

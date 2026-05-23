@@ -5,6 +5,7 @@ import com.finance.transactional.service.DepreciationScheduleService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -62,5 +63,28 @@ public class DepreciationScheduleController {
 
         service.deleteDepreciationSchedule(tenantId, id);
         return ResponseEntity.status(HttpStatus.OK).body("DepreciationSchedule deleted successfully!");
+    }
+
+    @PostMapping("/recalculate/{id}")
+    public ResponseEntity<Map<String, Object>> recalculateSchedule(
+            @PathVariable UUID tenantId,
+            @PathVariable UUID id) {
+
+        return ResponseEntity.status(HttpStatus.OK).body(service.recalculateSchedule(tenantId, id));
+    }
+
+    @PostMapping("/post/{id}")
+    public ResponseEntity<Map<String, Object>> postSchedule(
+            @PathVariable UUID tenantId,
+            @PathVariable UUID id) {
+
+        return ResponseEntity.status(HttpStatus.OK).body(service.postSchedule(tenantId, id));
+    }
+
+    @PostMapping("/post-all")
+    public ResponseEntity<Map<String, Object>> postAllSchedules(
+            @PathVariable UUID tenantId) {
+
+        return ResponseEntity.status(HttpStatus.OK).body(service.postAllSchedules(tenantId));
     }
 }

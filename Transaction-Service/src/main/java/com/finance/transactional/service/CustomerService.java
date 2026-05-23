@@ -37,12 +37,27 @@ public class CustomerService {
     public CustomerDto updateCustomer(UUID tenantId, UUID id, CustomerDto dto) {
         Customer existing = getExistingCustomer(tenantId, id);
         Customer updated = mapper.toEntity(dto);
-        updated.setId(existing.getId());
-        updated.setTenantId(tenantId);
-        updated.setCreatedAt(existing.getCreatedAt());
-        updated.setCreatedBy(existing.getCreatedBy());
-        updated = repository.save(updated);
-        return mapper.toDto(updated);
+
+        existing.setCustomerCode(updated.getCustomerCode());
+        existing.setCustomerName(updated.getCustomerName());
+        existing.setTaxId(updated.getTaxId());
+        existing.setContactEmail(updated.getContactEmail());
+        existing.setContactPhone(updated.getContactPhone());
+        existing.setCreditLimit(updated.getCreditLimit());
+        existing.setPaymentTerms(updated.getPaymentTerms());
+        existing.setDefaultCurrency(updated.getDefaultCurrency());
+        if (updated.getIsActive() != null) {
+            existing.setIsActive(updated.getIsActive());
+        }
+        if (updated.getStatus() != null) {
+            existing.setStatus(updated.getStatus());
+        }
+        if (updated.getCollectionsNotes() != null) {
+            existing.setCollectionsNotes(updated.getCollectionsNotes());
+        }
+
+        Customer saved = repository.save(existing);
+        return mapper.toDto(saved);
     }
 
     @Transactional(readOnly = true)

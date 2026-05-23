@@ -13,4 +13,6 @@ public interface BankReconciliationRepository extends JpaRepository<BankReconcil
     List<BankReconciliation> findByTenantId(UUID tenantId);
 
     Optional<BankReconciliation> findByTenantIdAndId(UUID tenantId, UUID id);
+
+    List<BankReconciliation> findByTenantIdAndStatus(UUID tenantId, String status);
 }

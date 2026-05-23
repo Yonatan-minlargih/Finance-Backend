@@ -59,10 +59,18 @@ public class Invoice extends BaseTenantEntity {
     @Column(name = "status", length = 50)
     private InvoiceStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "invoice_type", length = 50)
+    private InvoiceType invoiceType;
+
     @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private List<InvoiceLine> lines = new ArrayList<>();
 
     public enum InvoiceStatus {
-        DRAFT, PENDING_APPROVAL, APPROVED, REJECTED, PAID, PARTIALLY_PAID, CANCELLED
+        DRAFT, PENDING_APPROVAL, APPROVED, REJECTED, PAID, PARTIALLY_PAID, CANCELLED, ON_HOLD
+    }
+
+    public enum InvoiceType {
+        STANDARD, CREDIT_MEMO, DEBIT_MEMO, EXPENSE_REPORT
     }
 }

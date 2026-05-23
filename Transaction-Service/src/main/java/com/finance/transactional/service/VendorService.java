@@ -12,6 +12,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.finance.transactional.model.ap.VendorAddress;
+import com.finance.transactional.dto.VendorAddressDto;
+
 @Service
 @RequiredArgsConstructor
 public class VendorService {
@@ -24,6 +27,12 @@ public class VendorService {
     public VendorDto createVendor(UUID tenantId, VendorDto dto) {
         Vendor vendor = mapper.toEntity(dto);
         vendor.setTenantId(tenantId);
+        if (vendor.getAddresses() != null) {
+            vendor.getAddresses().forEach(addr -> {
+                addr.setVendor(vendor);
+                addr.setTenantId(tenantId);
+            });
+        }
         Vendor saved = repository.save(vendor);
         VendorDto resultDto = mapper.toDto(saved);
 
@@ -36,14 +45,42 @@ public class VendorService {
     @Transactional
     public VendorDto updateVendor(UUID tenantId, UUID id, VendorDto dto) {
         Vendor existing = getExistingVendor(tenantId, id);
-        Vendor updated = mapper.toEntity(dto);
-        updated.setId(existing.getId());
-        updated.setTenantId(tenantId);
-        updated.setCreatedAt(existing.getCreatedAt());
-        updated.setCreatedBy(existing.getCreatedBy());
-        updated = repository.save(updated);
-        return mapper.toDto(updated);
+        existing.setVendorCode(dto.getVendorCode());
+        existing.setVendorName(dto.getVendorName());
+        existing.setTaxId(dto.getTaxId());
+        existing.setContactEmail(dto.getContactEmail());
+        existing.setContactPhone(dto.getContactPhone());
+        existing.setPaymentTerms(dto.getPaymentTerms());
+        existing.setIsActive(dto.getIsActive());
+        existing.setClassification(dto.getClassification());
+        existing.setPaymentPriority(dto.getPaymentPriority());
+        existing.setEmdWaiver(dto.getEmdWaiver());
+        existing.setContactPerson(dto.getContactPerson());
+        existing.setVatNumber(dto.getVatNumber());
+        existing.setBankAccountNumber(dto.getBankAccountNumber());
+        existing.setDefaultCurrency(dto.getDefaultCurrency());
+
+
+        if (dto.getAddresses() != null) {
+            existing.getAddresses().clear();
+            for (VendorAddressDto addrDto : dto.getAddresses()) {
+                VendorAddress addr = new VendorAddress();
+                addr.setVendor(existing);
+                addr.setAddressType(addrDto.getAddressType());
+                addr.setStreetAddress(addrDto.getStreetAddress());
+                addr.setCity(addrDto.getCity());
+                addr.setState(addrDto.getState());
+                addr.setPostalCode(addrDto.getPostalCode());
+                addr.setCountry(addrDto.getCountry());
+                addr.setTenantId(tenantId);
+                existing.getAddresses().add(addr);
+            }
+        }
+
+        Vendor saved = repository.save(existing);
+        return mapper.toDto(saved);
     }
+
 
     @Transactional(readOnly = true)
     public VendorDto getVendorById(UUID tenantId, UUID id) {

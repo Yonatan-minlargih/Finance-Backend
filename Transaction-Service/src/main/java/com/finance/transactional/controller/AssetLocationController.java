@@ -5,6 +5,7 @@ import com.finance.transactional.service.AssetLocationService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -62,5 +63,13 @@ public class AssetLocationController {
 
         service.deleteAssetLocation(tenantId, id);
         return ResponseEntity.status(HttpStatus.OK).body("AssetLocation deleted successfully!");
+    }
+
+    @PostMapping("/mark-current/{id}")
+    public ResponseEntity<Map<String, Object>> markCurrent(
+            @PathVariable UUID tenantId,
+            @PathVariable UUID id) {
+
+        return ResponseEntity.status(HttpStatus.OK).body(service.markAsCurrent(tenantId, id));
     }
 }

@@ -29,8 +29,10 @@ public class SecurityConfig {
 
         http
                 .csrf(csrf -> csrf.disable())
+                .cors(org.springframework.security.config.Customizer.withDefaults())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> authz
+                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/swagger-ui/**").permitAll()
                         .requestMatchers("/v3/api-docs/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()

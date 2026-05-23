@@ -58,4 +58,23 @@ public class InvoiceController {
         InvoiceDto approved = invoiceService.approveInvoice(tenantId, id);
         return ResponseEntity.ok(approved);
     }
+
+    @org.springframework.web.bind.annotation.PutMapping("/update/{id}")
+    public ResponseEntity<InvoiceDto> updateInvoice(
+            @PathVariable UUID tenantId,
+            @PathVariable UUID id,
+            @Valid @RequestBody InvoiceDto invoiceDto) {
+
+        InvoiceDto updated = invoiceService.updateInvoice(tenantId, id, invoiceDto);
+        return ResponseEntity.ok(updated);
+    }
+
+    @org.springframework.web.bind.annotation.DeleteMapping("/delete/{id}")
+    public ResponseEntity<Void> deleteInvoice(
+            @PathVariable UUID tenantId,
+            @PathVariable UUID id) {
+
+        invoiceService.deleteInvoice(tenantId, id);
+        return ResponseEntity.noContent().build();
+    }
 }

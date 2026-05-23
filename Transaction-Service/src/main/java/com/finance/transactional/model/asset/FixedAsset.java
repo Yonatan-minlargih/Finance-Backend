@@ -31,6 +31,9 @@ public class FixedAsset extends BaseTenantEntity {
     @Column(name = "asset_category", length = 100)
     private String assetCategory;
 
+    @Column(name = "cost_center_code", length = 100)
+    private String costCenterCode;
+
     @Column(name = "acquisition_date", nullable = false)
     private LocalDate acquisitionDate;
 
@@ -51,6 +54,12 @@ public class FixedAsset extends BaseTenantEntity {
 
     @Column(name = "net_book_value", precision = 15, scale = 2)
     private BigDecimal netBookValue;
+
+    @Column(name = "last_inventoried_date")
+    private LocalDate lastInventoriedDate;
+
+    @Column(name = "reclassification_date")
+    private LocalDate reclassificationDate;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 50)

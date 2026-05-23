@@ -5,6 +5,7 @@ import com.finance.transactional.service.AssetTransactionService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -62,5 +63,20 @@ public class AssetTransactionController {
 
         service.deleteAssetTransaction(tenantId, id);
         return ResponseEntity.status(HttpStatus.OK).body("AssetTransaction deleted successfully!");
+    }
+
+    @PostMapping("/validate-batch")
+    public ResponseEntity<Map<String, Object>> validateBatch(
+            @PathVariable UUID tenantId) {
+
+        return ResponseEntity.status(HttpStatus.OK).body(service.validateTransactions(tenantId));
+    }
+
+    @PostMapping("/reverse/{id}")
+    public ResponseEntity<Map<String, Object>> reverseTransaction(
+            @PathVariable UUID tenantId,
+            @PathVariable UUID id) {
+
+        return ResponseEntity.status(HttpStatus.OK).body(service.reverseTransaction(tenantId, id));
     }
 }

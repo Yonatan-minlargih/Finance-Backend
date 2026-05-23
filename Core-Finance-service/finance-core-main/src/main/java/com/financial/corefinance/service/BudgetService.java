@@ -11,10 +11,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.validation.Valid;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -30,6 +35,7 @@ public class BudgetService {
     private final BudgetChangeRepository budgetChangeRepository;
     private final FiscalYearRepository fiscalYearRepository;
     private final FinanceEventService financeEventService;
+    private final AccountRepository accountRepository;
 
     @Transactional
     public Budget createBudget(@Valid Budget budget) {
@@ -174,6 +180,79 @@ public class BudgetService {
     }
 
     @Transactional
+    public List<BudgetLine> importBudgetLines(UUID budgetId, UUID versionId, MultipartFile file) {
+        if (file.isEmpty()) {
+            throw new BudgetValidationException("Please upload a CSV file!");
+        }
+
+        Budget budget = budgetRepository.findById(budgetId)
+                .orElseThrow(() -> new BudgetValidationException("Budget not found"));
+        assertBudgetUnlocked(budget);
+        
+        if (versionId != null) {
+            if (!budgetVersionRepository.existsById(versionId)) {
+                throw new BudgetValidationException("Budget version not found");
+            }
+        }
+
+        String tenantId = com.financial.corefinance.domain.base.TenantContext.getCurrentTenant();
+        List<BudgetLine> linesToSave = new ArrayList<>();
+
+        try (BufferedReader fileReader = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
+            String line;
+            boolean isFirstLine = true;
+            while ((line = fileReader.readLine()) != null) {
+                if (isFirstLine) {
+                    isFirstLine = false;
+                    // Skip header, optionally validate headers here.
+                    continue;
+                }
+                String[] values = line.split(",");
+                if (values.length < 2) continue;
+                
+                String accountCode = values[0].trim();
+                String amountStr = values[1].trim();
+                String notes = values.length > 2 ? values[2].trim() : null;
+
+                com.financial.corefinance.domain.entity.Account account = accountRepository.findByTenantIdAndAccountCode(tenantId, accountCode)
+                        .orElseThrow(() -> new BudgetValidationException("Account not found for code: " + accountCode));
+
+                BudgetLine budgetLine = new BudgetLine();
+                budgetLine.setBudgetId(budgetId);
+                budgetLine.setBudgetVersionId(versionId);
+                budgetLine.setAccountId(account.getId());
+                try {
+                    budgetLine.setBudgetAmount(new BigDecimal(amountStr));
+                } catch(NumberFormatException e) {
+                    throw new BudgetValidationException("Invalid budget amount: " + amountStr);
+                }
+                budgetLine.setNotes(notes);
+                
+                // Defaults
+                budgetLine.setAllocatedAmount(BigDecimal.ZERO);
+                budgetLine.setActualAmount(BigDecimal.ZERO);
+                budgetLine.setCommitmentAmount(BigDecimal.ZERO);
+                budgetLine.setAvailableAmount(BigDecimal.ZERO);
+                budgetLine.setVarianceAmount(BigDecimal.ZERO);
+                budgetLine.setVariancePercentage(BigDecimal.ZERO);
+                budgetLine.setBudgetPeriodType("ANNUAL");
+                budgetLine.setSpreadMethod("EVEN");
+
+                budgetLine.calculateAmounts();
+                linesToSave.add(budgetLine);
+            }
+        } catch(BudgetValidationException e) {
+            throw e; 
+        } catch (Exception e) {
+            throw new BudgetValidationException("Failed to parse CSV file: " + e.getMessage());
+        }
+
+        List<BudgetLine> savedLines = budgetLineRepository.saveAll(linesToSave);
+        updateBudgetTotals(budgetId, versionId);
+        return savedLines;
+    }
+
+    @Transactional
     public BudgetChange createBudgetChange(@Valid BudgetChange budgetChange) {
         log.info("Creating budget change: {} for budget line: {}", 
                 budgetChange.getChangeType(), budgetChange.getBudgetLineId());
@@ -187,6 +266,11 @@ public class BudgetService {
         Budget budget = budgetRepository.findById(line.getBudgetId())
                 .orElseThrow(() -> new BudgetValidationException("Budget not found: " + line.getBudgetId()));
         assertBudgetUnlocked(budget);
+        
+        // Auto-populate oldAmount from the budget line's current amount
+        if (budgetChange.getOldAmount() == null && line.getBudgetAmount() != null) {
+            budgetChange.setOldAmount(line.getBudgetAmount());
+        }
         
         // Set default values
         if (budgetChange.getStatus() == null) {
@@ -277,6 +361,49 @@ public class BudgetService {
         return updatedVersion;
     }
 
+    @Transactional
+    public BudgetVersion approveBudgetVersion(UUID budgetVersionId, String approvedBy) {
+        log.info("Approving budget version: {}", budgetVersionId);
+        BudgetVersion version = budgetVersionRepository.findById(budgetVersionId)
+            .orElseThrow(() -> new BudgetValidationException("Budget version not found: " + budgetVersionId));
+        
+        version.setStatus(BudgetVersion.BudgetVersionStatus.APPROVED);
+        version.setApprovedAt(LocalDate.now());
+        version.setApprovedBy(approvedBy);
+        
+        BudgetVersion updatedVersion = budgetVersionRepository.save(version);
+        log.info("Budget version approved successfully: {}", updatedVersion.getVersionNumber());
+        return updatedVersion;
+    }
+
+    @Transactional
+    public BudgetVersion unapproveBudgetVersion(UUID budgetVersionId) {
+        log.info("Unapproving budget version: {}", budgetVersionId);
+        BudgetVersion version = budgetVersionRepository.findById(budgetVersionId)
+            .orElseThrow(() -> new BudgetValidationException("Budget version not found: " + budgetVersionId));
+        
+        version.setStatus(BudgetVersion.BudgetVersionStatus.DRAFT);
+        version.setApprovedAt(null);
+        version.setApprovedBy(null);
+        
+        BudgetVersion updatedVersion = budgetVersionRepository.save(version);
+        log.info("Budget version unapproved successfully: {}", updatedVersion.getVersionNumber());
+        return updatedVersion;
+    }
+
+    @Transactional
+    public BudgetVersion archiveBudgetVersion(UUID budgetVersionId) {
+        log.info("Archiving budget version: {}", budgetVersionId);
+        BudgetVersion version = budgetVersionRepository.findById(budgetVersionId)
+            .orElseThrow(() -> new BudgetValidationException("Budget version not found: " + budgetVersionId));
+        
+        version.setStatus(BudgetVersion.BudgetVersionStatus.ARCHIVED);
+        
+        BudgetVersion updatedVersion = budgetVersionRepository.save(version);
+        log.info("Budget version archived successfully: {}", updatedVersion.getVersionNumber());
+        return updatedVersion;
+    }
+
     @Transactional(readOnly = true)
     public Optional<Budget> getBudgetById(UUID budgetId) {
         return budgetRepository.findById(budgetId);
@@ -362,6 +489,30 @@ public class BudgetService {
         
         BudgetChange updatedChange = budgetChangeRepository.save(budgetChange);
         log.info("Budget change approved and applied successfully: {}", updatedChange.getChangeType());
+        return updatedChange;
+    }
+
+    @Transactional
+    public BudgetChange rejectBudgetChange(UUID budgetChangeId, String rejectedBy) {
+        log.info("Rejecting budget change: {}", budgetChangeId);
+        
+        Optional<BudgetChange> changeOpt = budgetChangeRepository.findById(budgetChangeId);
+        if (changeOpt.isEmpty()) {
+            throw new BudgetValidationException("Budget change not found: " + budgetChangeId);
+        }
+        
+        BudgetChange budgetChange = changeOpt.get();
+        
+        if (budgetChange.getStatus() != BudgetChange.ChangeStatus.PENDING) {
+            throw new BudgetValidationException("Only pending budget changes can be rejected");
+        }
+        
+        budgetChange.setStatus(BudgetChange.ChangeStatus.REJECTED);
+        budgetChange.setApprovedBy(rejectedBy);
+        budgetChange.setApprovedAt(java.time.LocalDateTime.now());
+        
+        BudgetChange updatedChange = budgetChangeRepository.save(budgetChange);
+        log.info("Budget change rejected: {}", updatedChange.getChangeType());
         return updatedChange;
     }
 

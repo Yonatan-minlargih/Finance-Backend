@@ -13,4 +13,6 @@ public interface BankTransactionRepository extends JpaRepository<BankTransaction
     List<BankTransaction> findByTenantId(UUID tenantId);
 
     Optional<BankTransaction> findByTenantIdAndId(UUID tenantId, UUID id);
+
+    List<BankTransaction> findByTenantIdAndIsReconciledFalse(UUID tenantId);
 }

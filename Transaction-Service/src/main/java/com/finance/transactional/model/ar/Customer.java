@@ -38,6 +38,15 @@ public class Customer extends BaseTenantEntity {
     @Column(name = "payment_terms", length = 100)
     private String paymentTerms;
 
+    @Column(name = "default_currency", length = 3)
+    private String defaultCurrency = "ETB";
+
     @Column(name = "is_active")
     private Boolean isActive = true;
+
+    @Column(name = "status", length = 50)
+    private String status = "ACTIVE";
+
+    @Column(name = "collections_notes", columnDefinition = "TEXT")
+    private String collectionsNotes = "[]";
 }
