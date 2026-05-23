@@ -37,12 +37,17 @@ public class PurchaseOrderService {
     public PurchaseOrderDto updatePurchaseOrder(UUID tenantId, UUID id, PurchaseOrderDto dto) {
         PurchaseOrder existing = getExistingPurchaseOrder(tenantId, id);
         PurchaseOrder updated = mapper.toEntity(dto);
-        updated.setId(existing.getId());
-        updated.setTenantId(tenantId);
-        updated.setCreatedAt(existing.getCreatedAt());
-        updated.setCreatedBy(existing.getCreatedBy());
-        updated = repository.save(updated);
-        return mapper.toDto(updated);
+        
+        existing.setPoNumber(updated.getPoNumber());
+        existing.setVendor(updated.getVendor());
+        existing.setOrderDate(updated.getOrderDate());
+        existing.setDeliveryDate(updated.getDeliveryDate());
+        existing.setTotalAmount(updated.getTotalAmount());
+        existing.setCurrency(updated.getCurrency());
+        existing.setStatus(updated.getStatus());
+        
+        PurchaseOrder saved = repository.save(existing);
+        return mapper.toDto(saved);
     }
 
     @Transactional(readOnly = true)

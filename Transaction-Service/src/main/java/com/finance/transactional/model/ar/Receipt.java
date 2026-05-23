@@ -5,6 +5,7 @@ import com.finance.transactional.model.banking.BankAccount;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -51,6 +52,14 @@ public class Receipt extends BaseTenantEntity {
     @Column(name = "reference_number", length = 100)
     private String referenceNumber;
 
+    @Enumerated(jakarta.persistence.EnumType.STRING)
+    @Column(name = "status", length = 50)
+    private ReceiptStatus status = ReceiptStatus.DRAFT;
+
     @OneToMany(mappedBy = "receipt", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private List<ReceiptAllocation> allocations = new ArrayList<>();
+
+    public enum ReceiptStatus {
+        DRAFT, POSTED, CANCELLED
+    }
 }

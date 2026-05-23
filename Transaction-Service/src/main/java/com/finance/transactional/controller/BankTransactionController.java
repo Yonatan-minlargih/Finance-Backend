@@ -5,6 +5,7 @@ import com.finance.transactional.service.BankTransactionService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -62,5 +63,40 @@ public class BankTransactionController {
 
         service.deleteBankTransaction(tenantId, id);
         return ResponseEntity.status(HttpStatus.OK).body("BankTransaction deleted successfully!");
+    }
+
+    @PostMapping("/import")
+    public ResponseEntity<Map<String, Object>> importBankTransactions(
+            @PathVariable UUID tenantId) {
+
+        return ResponseEntity.status(HttpStatus.OK).body(service.importBankTransactions(tenantId));
+    }
+
+    @PostMapping("/validate-batch")
+    public ResponseEntity<Map<String, Object>> validateBankTransactions(
+            @PathVariable UUID tenantId) {
+
+        return ResponseEntity.status(HttpStatus.OK).body(service.validateBankTransactions(tenantId));
+    }
+
+    @PostMapping("/post-all")
+    public ResponseEntity<Map<String, Object>> postAllBankTransactions(
+            @PathVariable UUID tenantId) {
+
+        return ResponseEntity.status(HttpStatus.OK).body(service.postAllBankTransactions(tenantId));
+    }
+
+    @PostMapping("/reverse-latest")
+    public ResponseEntity<Map<String, Object>> reverseLatestTransaction(
+            @PathVariable UUID tenantId) {
+
+        return ResponseEntity.status(HttpStatus.OK).body(service.reverseLatestTransaction(tenantId));
+    }
+
+    @PostMapping("/post-cycles")
+    public ResponseEntity<Map<String, Object>> postReconciliationCycles(
+            @PathVariable UUID tenantId) {
+
+        return ResponseEntity.status(HttpStatus.OK).body(service.postReconciliationCycles(tenantId));
     }
 }

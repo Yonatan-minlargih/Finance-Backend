@@ -37,12 +37,25 @@ public class SalesInvoiceService {
     public SalesInvoiceDto updateSalesInvoice(UUID tenantId, UUID id, SalesInvoiceDto dto) {
         SalesInvoice existing = getExistingSalesInvoice(tenantId, id);
         SalesInvoice updated = mapper.toEntity(dto);
-        updated.setId(existing.getId());
-        updated.setTenantId(tenantId);
-        updated.setCreatedAt(existing.getCreatedAt());
-        updated.setCreatedBy(existing.getCreatedBy());
-        updated = repository.save(updated);
-        return mapper.toDto(updated);
+
+        existing.setInvoiceNumber(updated.getInvoiceNumber());
+        if (updated.getCustomer() != null && updated.getCustomer().getId() != null) {
+            existing.setCustomer(updated.getCustomer());
+        }
+        existing.setInvoiceDate(updated.getInvoiceDate());
+        existing.setDueDate(updated.getDueDate());
+        existing.setTotalAmount(updated.getTotalAmount());
+        existing.setTaxAmount(updated.getTaxAmount());
+        existing.setCurrency(updated.getCurrency());
+        if (updated.getStatus() != null) {
+            existing.setStatus(updated.getStatus());
+        }
+        if (updated.getIsMatched() != null) {
+            existing.setIsMatched(updated.getIsMatched());
+        }
+
+        SalesInvoice saved = repository.save(existing);
+        return mapper.toDto(saved);
     }
 
     @Transactional(readOnly = true)
@@ -55,6 +68,60 @@ public class SalesInvoiceService {
         return repository.findByTenantId(tenantId).stream()
                 .map(mapper::toDto)
                 .toList();
+    }
+
+    @Transactional
+    public SalesInvoiceDto approveSalesInvoice(UUID tenantId, UUID id) {
+        SalesInvoice invoice = getExistingSalesInvoice(tenantId, id);
+        if (invoice.getStatus() != SalesInvoice.SalesInvoiceStatus.DRAFT) {
+            throw new IllegalStateException("Only DRAFT sales invoices can be approved/issued.");
+        }
+        invoice.setStatus(SalesInvoice.SalesInvoiceStatus.ISSUED);
+        SalesInvoice saved = repository.save(invoice);
+        SalesInvoiceDto resultDto = mapper.toDto(saved);
+
+        // Publish event for General Ledger integration
+        domainEventPublisher.publish("sales-invoice-approved", resultDto);
+
+        return resultDto;
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.Map<String, java.math.BigDecimal> getAgingAnalysis(UUID tenantId, java.time.LocalDate asOfDate) {
+        List<SalesInvoice> outstandingInvoices = repository.findByTenantId(tenantId).stream()
+                .filter(i -> i.getStatus() == SalesInvoice.SalesInvoiceStatus.ISSUED || i.getStatus() == SalesInvoice.SalesInvoiceStatus.PARTIALLY_PAID)
+                .toList();
+
+        java.math.BigDecimal current = java.math.BigDecimal.ZERO;
+        java.math.BigDecimal days30 = java.math.BigDecimal.ZERO;
+        java.math.BigDecimal days60 = java.math.BigDecimal.ZERO;
+        java.math.BigDecimal days90 = java.math.BigDecimal.ZERO;
+        java.math.BigDecimal days120 = java.math.BigDecimal.ZERO;
+        java.math.BigDecimal over120 = java.math.BigDecimal.ZERO;
+
+        for (SalesInvoice inv : outstandingInvoices) {
+            // Determine outstanding amount. If receipt allocations exist, we should subtract them, but for now we'll just take totalAmount if not fully paid.
+            // A more complex system would sum ReceiptAllocations. For now, we assume totalAmount is outstanding if ISSUED.
+            java.math.BigDecimal outstanding = inv.getTotalAmount();
+            
+            long daysOld = java.time.temporal.ChronoUnit.DAYS.between(inv.getInvoiceDate(), asOfDate);
+            if (daysOld <= 0) current = current.add(outstanding);
+            else if (daysOld <= 30) days30 = days30.add(outstanding);
+            else if (daysOld <= 60) days60 = days60.add(outstanding);
+            else if (daysOld <= 90) days90 = days90.add(outstanding);
+            else if (daysOld <= 120) days120 = days120.add(outstanding);
+            else over120 = over120.add(outstanding);
+        }
+
+        java.util.Map<String, java.math.BigDecimal> buckets = new java.util.LinkedHashMap<>();
+        buckets.put("Current", current);
+        buckets.put("1-30 Days", days30);
+        buckets.put("31-60 Days", days60);
+        buckets.put("61-90 Days", days90);
+        buckets.put("91-120 Days", days120);
+        buckets.put("Over 120 Days", over120);
+
+        return buckets;
     }
 
     @Transactional

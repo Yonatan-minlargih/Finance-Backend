@@ -1,12 +1,15 @@
 package com.finance.transactional.service;
 
 import com.finance.transactional.dto.AssetTransactionDto;
-import com.finance.transactional.exception.ResourceNotFoundException;
-import com.finance.transactional.model.asset.AssetTransaction;
 import com.finance.transactional.event.DomainEventPublisher;
+import com.finance.transactional.exception.ResourceNotFoundException;
 import com.finance.transactional.mapper.AssetTransactionMapper;
+import com.finance.transactional.model.asset.AssetTransaction;
 import com.finance.transactional.repository.AssetTransactionRepository;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,10 +29,7 @@ public class AssetTransactionService {
         assetTransaction.setTenantId(tenantId);
         AssetTransaction saved = repository.save(assetTransaction);
         AssetTransactionDto resultDto = mapper.toDto(saved);
-
-        // Publish event
         domainEventPublisher.publish("asset-transaction-created", resultDto);
-
         return resultDto;
     }
 
@@ -61,6 +61,37 @@ public class AssetTransactionService {
     public void deleteAssetTransaction(UUID tenantId, UUID id) {
         AssetTransaction assetTransaction = getExistingAssetTransaction(tenantId, id);
         repository.delete(assetTransaction);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> validateTransactions(UUID tenantId) {
+        List<AssetTransaction> transactions = repository.findByTenantId(tenantId);
+        long valid = transactions.stream()
+                .filter(tx -> tx.getAsset() != null
+                        && tx.getTransactionDate() != null
+                        && tx.getTransactionType() != null
+                        && !tx.getTransactionType().isBlank()
+                        && tx.getAmount() != null)
+                .count();
+        return Map.of(
+                "total", transactions.size(),
+                "valid", valid,
+                "invalid", transactions.size() - valid,
+                "message", "Asset transaction validation completed.");
+    }
+
+    @Transactional
+    public Map<String, Object> reverseTransaction(UUID tenantId, UUID id) {
+        AssetTransaction source = getExistingAssetTransaction(tenantId, id);
+        AssetTransaction reversal = new AssetTransaction();
+        reversal.setTenantId(tenantId);
+        reversal.setAsset(source.getAsset());
+        reversal.setTransactionType(source.getTransactionType() + "_REVERSAL");
+        reversal.setTransactionDate(LocalDate.now());
+        reversal.setAmount(source.getAmount().negate());
+        reversal.setDescription("Reversal of " + source.getDescription());
+        repository.save(reversal);
+        return Map.of("message", "Asset transaction reversed successfully.");
     }
 
     private AssetTransaction getExistingAssetTransaction(UUID tenantId, UUID id) {

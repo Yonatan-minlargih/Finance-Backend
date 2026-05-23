@@ -5,6 +5,7 @@ import com.finance.transactional.service.PhysicalInventoryCountService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -62,5 +63,13 @@ public class PhysicalInventoryCountController {
 
         service.deletePhysicalInventoryCount(tenantId, id);
         return ResponseEntity.status(HttpStatus.OK).body("PhysicalInventoryCount deleted successfully!");
+    }
+
+    @PostMapping("/apply/{id}")
+    public ResponseEntity<Map<String, Object>> applyCount(
+            @PathVariable UUID tenantId,
+            @PathVariable UUID id) {
+
+        return ResponseEntity.status(HttpStatus.OK).body(service.applyCount(tenantId, id));
     }
 }

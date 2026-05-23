@@ -3,7 +3,11 @@ package com.financial.corefinance.controller;
 import com.financial.corefinance.dto.request.BudgetRequest;
 import com.financial.corefinance.dto.response.BudgetResponse;
 import com.financial.corefinance.domain.entity.Budget;
+import com.financial.corefinance.domain.entity.BudgetLine;
+import com.financial.corefinance.dto.response.BudgetLineResponse;
 import com.financial.corefinance.repository.BudgetRepository;
+import com.financial.corefinance.repository.AccountRepository;
+import com.financial.corefinance.service.BudgetService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -18,6 +22,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
@@ -28,10 +33,11 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/v1/budgets")
 @RequiredArgsConstructor
 @Slf4j
-@Tag(name = "Budget Management", description = "APIs for managing budgets and budget monitoring")
 public class BudgetController {
 
     private final BudgetRepository budgetRepository;
+    private final BudgetService budgetService;
+    private final AccountRepository accountRepository;
 
     @PostMapping
     // @PreAuthorize("hasRole('FINANCE_MANAGER') or hasRole('BUDGET_MANAGER')")
@@ -215,6 +221,61 @@ public class BudgetController {
         return ResponseEntity.ok(toBudgetResponse(updatedBudget));
     }
 
+    @PostMapping("/{budgetId}/unlock")
+    @Operation(summary = "Unlock budget", description = "Unlocks a budget to allow further changes")
+    public ResponseEntity<BudgetResponse> unlockBudget(
+            @Parameter(description = "Budget ID") @PathVariable UUID budgetId) {
+        log.info("Unlocking budget with ID: {}", budgetId);
+
+        Optional<Budget> budgetOpt = budgetRepository.findById(budgetId);
+        if (budgetOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Budget budget = budgetOpt.get();
+        budget.setLocked(false);
+        budget.setLockedAt(null);
+        budget.setLockedBy(null);
+
+        Budget updatedBudget = budgetRepository.save(budget);
+        return ResponseEntity.ok(toBudgetResponse(updatedBudget));
+    }
+
+    @GetMapping("/{budgetId}/lines")
+    @Operation(summary = "Get budget lines", description = "Retrieves lines for a specific budget")
+    public ResponseEntity<List<BudgetLineResponse>> getBudgetLines(
+            @Parameter(description = "Budget ID") @PathVariable UUID budgetId,
+            @RequestParam(required = false) UUID versionId) {
+        List<BudgetLineResponse> lines = budgetService.getBudgetLines(budgetId, versionId)
+                .stream()
+                .map(this::toBudgetLineResponse)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(lines);
+    }
+
+    @PostMapping("/{budgetId}/lines")
+    @Operation(summary = "Create budget line", description = "Creates a new budget line")
+    public ResponseEntity<BudgetLine> createBudgetLine(
+            @PathVariable UUID budgetId,
+            @Valid @RequestBody BudgetLine budgetLine) {
+        budgetLine.setBudgetId(budgetId);
+        return ResponseEntity.ok(budgetService.createBudgetLine(budgetLine));
+    }
+
+    @PostMapping(value = "/{budgetId}/lines/import", consumes = "multipart/form-data")
+    @Operation(summary = "Import budget lines", description = "Imports a CSV file to create budget lines")
+    public ResponseEntity<List<BudgetLineResponse>> importBudgetLines(
+            @PathVariable UUID budgetId,
+            @RequestParam(required = false) UUID versionId,
+            @RequestParam("file") MultipartFile file) {
+        log.info("Importing budget lines for budget: {} and versionId: {}", budgetId, versionId);
+        List<BudgetLineResponse> lines = budgetService.importBudgetLines(budgetId, versionId, file)
+                .stream()
+                .map(this::toBudgetLineResponse)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(lines);
+    }
+
     @DeleteMapping("/{budgetId}")
     // @PreAuthorize("hasRole('FINANCE_MANAGER')")
     @Operation(summary = "Delete budget", description = "Deletes a budget (if not used in transactions)")
@@ -276,6 +337,37 @@ public class BudgetController {
         response.setLockedBy(budget.getLockedBy());
         response.setEffectiveFrom(budget.getEffectiveFrom());
         response.setEffectiveTo(budget.getEffectiveTo());
+        return response;
+    }
+
+    private BudgetLineResponse toBudgetLineResponse(BudgetLine line) {
+        BudgetLineResponse response = BudgetLineResponse.builder()
+                .id(line.getId())
+                .budgetId(line.getBudgetId())
+                .budgetVersionId(line.getBudgetVersionId())
+                .accountId(line.getAccountId())
+                .departmentId(line.getDepartmentId())
+                .costCenterId(line.getCostCenterId())
+                .projectId(line.getProjectId())
+                .periodNumber(line.getPeriodNumber())
+                .budgetAmount(line.getBudgetAmount())
+                .allocatedAmount(line.getAllocatedAmount())
+                .actualAmount(line.getActualAmount())
+                .commitmentAmount(line.getCommitmentAmount())
+                .availableAmount(line.getAvailableAmount())
+                .varianceAmount(line.getVarianceAmount())
+                .variancePercentage(line.getVariancePercentage())
+                .budgetPeriodType(line.getBudgetPeriodType())
+                .spreadMethod(line.getSpreadMethod())
+                .notes(line.getNotes())
+                .lastUpdatedAt(line.getLastUpdatedAt())
+                .build();
+        if (line.getAccountId() != null) {
+            accountRepository.findById(line.getAccountId()).ifPresent(a -> {
+                response.setAccountCode(a.getAccountCode());
+                response.setAccountName(a.getAccountName());
+            });
+        }
         return response;
     }
 }

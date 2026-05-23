@@ -13,4 +13,6 @@ public interface AssetLocationRepository extends JpaRepository<AssetLocation, UU
     List<AssetLocation> findByTenantId(UUID tenantId);
 
     Optional<AssetLocation> findByTenantIdAndId(UUID tenantId, UUID id);
+
+    List<AssetLocation> findByTenantIdAndAssetId(UUID tenantId, UUID assetId);
 }

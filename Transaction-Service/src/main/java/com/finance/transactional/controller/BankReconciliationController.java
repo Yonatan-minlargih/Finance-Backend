@@ -5,6 +5,7 @@ import com.finance.transactional.service.BankReconciliationService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -62,5 +63,48 @@ public class BankReconciliationController {
 
         service.deleteBankReconciliation(tenantId, id);
         return ResponseEntity.status(HttpStatus.OK).body("BankReconciliation deleted successfully!");
+    }
+
+    @PostMapping("/post-all")
+    public ResponseEntity<?> postAllBankReconciliations(
+            @PathVariable UUID tenantId) {
+
+        service.postAllBankReconciliations(tenantId);
+        return ResponseEntity.status(HttpStatus.OK).body("All draft reconciliations posted successfully!");
+    }
+
+    @PostMapping("/hold-release")
+    public ResponseEntity<Map<String, Object>> holdRelease(
+            @PathVariable UUID tenantId) {
+
+        return ResponseEntity.status(HttpStatus.OK).body(service.toggleHoldRelease(tenantId));
+    }
+
+    @GetMapping("/approval-queue")
+    public ResponseEntity<Map<String, Object>> approvalQueue(
+            @PathVariable UUID tenantId) {
+
+        return ResponseEntity.status(HttpStatus.OK).body(service.getApprovalQueue(tenantId));
+    }
+
+    @PostMapping("/match-documents")
+    public ResponseEntity<Map<String, Object>> matchDocuments(
+            @PathVariable UUID tenantId) {
+
+        return ResponseEntity.status(HttpStatus.OK).body(service.matchDocuments(tenantId));
+    }
+
+    @PostMapping("/scan-capture")
+    public ResponseEntity<Map<String, Object>> scanCapture(
+            @PathVariable UUID tenantId) {
+
+        return ResponseEntity.status(HttpStatus.OK).body(service.scanCapture(tenantId));
+    }
+
+    @GetMapping("/import-statement")
+    public ResponseEntity<Map<String, Object>> importStatement(
+            @PathVariable UUID tenantId) {
+
+        return ResponseEntity.status(HttpStatus.OK).body(service.importStatement(tenantId));
     }
 }

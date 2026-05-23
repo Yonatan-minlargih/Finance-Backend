@@ -49,6 +49,6 @@ public class PurchaseOrder extends BaseTenantEntity {
     private POStatus status;
 
     public enum POStatus {
-        DRAFT, PENDING_APPROVAL, APPROVED, REJECTED, CLOSED, CANCELLED
+        DRAFT, PENDING_APPROVAL, APPROVED, REJECTED, CLOSED, CANCELLED, ON_HOLD
     }
 }

@@ -19,7 +19,14 @@ public class VendorDto {
     private String taxId;
     private String contactEmail;
     private String contactPhone;
+    private String contactPerson;
+    private String vatNumber;
+    private String bankAccountNumber;
+    private String defaultCurrency;
     private String paymentTerms;
     private Boolean isActive;
+    private String classification;
+    private String paymentPriority;
+    private Boolean emdWaiver;
     private List<VendorAddressDto> addresses;
 }

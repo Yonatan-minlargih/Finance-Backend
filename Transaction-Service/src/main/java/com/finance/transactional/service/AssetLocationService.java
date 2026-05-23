@@ -2,10 +2,11 @@ package com.finance.transactional.service;
 
 import com.finance.transactional.dto.AssetLocationDto;
 import com.finance.transactional.exception.ResourceNotFoundException;
-import com.finance.transactional.model.asset.AssetLocation;
 import com.finance.transactional.mapper.AssetLocationMapper;
+import com.finance.transactional.model.asset.AssetLocation;
 import com.finance.transactional.repository.AssetLocationRepository;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,9 @@ public class AssetLocationService {
     public AssetLocationDto createAssetLocation(UUID tenantId, AssetLocationDto dto) {
         AssetLocation assetLocation = mapper.toEntity(dto);
         assetLocation.setTenantId(tenantId);
+        if (Boolean.TRUE.equals(assetLocation.getIsCurrent())) {
+            clearCurrentLocations(tenantId, dto.getAssetId());
+        }
         AssetLocation saved = repository.save(assetLocation);
         return mapper.toDto(saved);
     }
@@ -34,6 +38,9 @@ public class AssetLocationService {
         updated.setTenantId(tenantId);
         updated.setCreatedAt(existing.getCreatedAt());
         updated.setCreatedBy(existing.getCreatedBy());
+        if (Boolean.TRUE.equals(updated.getIsCurrent()) && dto.getAssetId() != null) {
+            clearCurrentLocations(tenantId, dto.getAssetId());
+        }
         updated = repository.save(updated);
         return mapper.toDto(updated);
     }
@@ -54,6 +61,20 @@ public class AssetLocationService {
     public void deleteAssetLocation(UUID tenantId, UUID id) {
         AssetLocation assetLocation = getExistingAssetLocation(tenantId, id);
         repository.delete(assetLocation);
+    }
+
+    @Transactional
+    public Map<String, Object> markAsCurrent(UUID tenantId, UUID id) {
+        AssetLocation location = getExistingAssetLocation(tenantId, id);
+        clearCurrentLocations(tenantId, location.getAsset().getId());
+        location.setIsCurrent(true);
+        repository.save(location);
+        return Map.of("message", "Asset location marked as current.");
+    }
+
+    private void clearCurrentLocations(UUID tenantId, UUID assetId) {
+        repository.findByTenantIdAndAssetId(tenantId, assetId)
+                .forEach(location -> location.setIsCurrent(false));
     }
 
     private AssetLocation getExistingAssetLocation(UUID tenantId, UUID id) {
