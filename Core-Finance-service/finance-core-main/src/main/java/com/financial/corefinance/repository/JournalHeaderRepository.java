@@ -45,10 +45,19 @@ public interface JournalHeaderRepository extends JpaRepository<JournalHeader, UU
 
     boolean existsByTenantIdAndJournalNumber(String tenantId, String journalNumber);
 
+    @Query("SELECT DISTINCT j FROM JournalHeader j LEFT JOIN FETCH j.journalLines WHERE j.id = :id")
+    Optional<JournalHeader> findByIdWithLines(@Param("id") UUID id);
+
     @Query("SELECT j FROM JournalHeader j JOIN AccountingPeriod p ON p.id = j.accountingPeriodId " +
             "WHERE j.tenantId = :tenantId AND j.journalType = :journalType AND p.fiscalYearId = :fiscalYearId")
     List<JournalHeader> findByTenantIdAndJournalTypeAndFiscalYearId(
             @Param("tenantId") String tenantId,
             @Param("journalType") JournalHeader.JournalType journalType,
             @Param("fiscalYearId") UUID fiscalYearId);
+
+    Optional<JournalHeader> findFirstByTenantIdAndReferenceTypeAndReferenceIdAndStatus(
+            String tenantId,
+            String referenceType,
+            UUID referenceId,
+            JournalHeader.JournalStatus status);
 }

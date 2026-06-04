@@ -27,4 +27,7 @@ public interface NumberingSeriesRepository extends JpaRepository<NumberingSeries
     List<NumberingSeries> findActiveNumberingSeries(@Param("tenantId") String tenantId);
 
     boolean existsByTenantIdAndSeriesCode(String tenantId, String seriesCode);
+
+    @Query("SELECT ns FROM NumberingSeries ns WHERE ns.tenantId = :tenantId ORDER BY ns.seriesCode")
+    List<NumberingSeries> findByTenantId(@Param("tenantId") String tenantId);
 }

@@ -24,8 +24,14 @@ public interface AccountingPeriodRepository extends JpaRepository<AccountingPeri
 
     List<AccountingPeriod> findByTenantIdAndIsClosedFalse(String tenantId);
 
-    @Query("SELECT ap FROM AccountingPeriod ap WHERE ap.tenantId = :tenantId AND :date BETWEEN ap.startDate AND ap.endDate")
-    Optional<AccountingPeriod> findPeriodForDate(@Param("tenantId") String tenantId, @Param("date") LocalDate date);
+    @Query("SELECT ap FROM AccountingPeriod ap WHERE ap.tenantId = :tenantId AND :date BETWEEN ap.startDate AND ap.endDate " +
+           "ORDER BY CASE WHEN ap.isOpen = true THEN 0 ELSE 1 END, ap.periodNumber DESC")
+    List<AccountingPeriod> findAllPeriodsForDate(@Param("tenantId") String tenantId, @Param("date") LocalDate date);
+
+    default Optional<AccountingPeriod> findPeriodForDate(String tenantId, LocalDate date) {
+        List<AccountingPeriod> matches = findAllPeriodsForDate(tenantId, date);
+        return matches.isEmpty() ? Optional.empty() : Optional.of(matches.getFirst());
+    }
 
     @Query("SELECT ap FROM AccountingPeriod ap WHERE ap.tenantId = :tenantId AND ap.fiscalYearId = :fiscalYearId AND ap.isClosed = false ORDER BY ap.periodNumber")
     List<AccountingPeriod> findOpenPeriodsByFiscalYear(@Param("tenantId") String tenantId, @Param("fiscalYearId") UUID fiscalYearId);

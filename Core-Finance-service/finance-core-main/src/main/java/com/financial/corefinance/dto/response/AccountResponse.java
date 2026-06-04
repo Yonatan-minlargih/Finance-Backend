@@ -34,4 +34,5 @@ public class AccountResponse {
     private LocalDate openingBalanceDate;
     private String currencyCode;
     private Account.IFRSCategory ifrsCategory;
+    private BigDecimal currentBalance;
 }

@@ -30,6 +30,8 @@ public class JournalHeaderResponse {
     private LocalDate journalDate;
     private UUID accountingPeriodId;
     private String accountingPeriodName;
+    private UUID fiscalYearId;
+    private String fiscalYearName;
     private JournalHeader.JournalType journalType;
     private String referenceNumber;
     private String referenceType;

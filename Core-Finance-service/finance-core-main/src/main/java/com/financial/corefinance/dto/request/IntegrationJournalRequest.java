@@ -68,5 +68,7 @@ public class IntegrationJournalRequest {
         private String analysisCode;
         private String currencyCode = "USD";
         private BigDecimal exchangeRate = BigDecimal.ONE;
+        private BigDecimal foreignDebitAmount;
+        private BigDecimal foreignCreditAmount;
     }
 }

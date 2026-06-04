@@ -31,8 +31,20 @@ public class TransactionalEventProducer {
     @Value("${spring.rabbitmq.custom.sales-invoice-created-queue}")
     private String salesInvoiceCreatedQueue;
 
+    @Value("${spring.rabbitmq.custom.sales-invoice-approved-queue}")
+    private String salesInvoiceApprovedQueue;
+
     @Value("${spring.rabbitmq.custom.receipt-created-queue}")
     private String receiptCreatedQueue;
+
+    @Value("${spring.rabbitmq.custom.receipt-posted-queue}")
+    private String receiptPostedQueue;
+
+    @Value("${spring.rabbitmq.custom.ar-write-off-queue}")
+    private String arWriteOffQueue;
+
+    @Value("${spring.rabbitmq.custom.ar-interest-queue}")
+    private String arInterestQueue;
 
     @Value("${spring.rabbitmq.custom.purchase-order-created-queue}")
     private String purchaseOrderCreatedQueue;
@@ -71,8 +83,24 @@ public class TransactionalEventProducer {
         send(salesInvoiceCreatedQueue, payload, "Sales Invoice Created");
     }
 
+    public void publishSalesInvoiceApproved(Object payload) {
+        send(salesInvoiceApprovedQueue, payload, "Sales Invoice Approved");
+    }
+
     public void publishReceiptCreated(Object payload) {
         send(receiptCreatedQueue, payload, "Receipt Created");
+    }
+
+    public void publishReceiptPosted(Object payload) {
+        send(receiptPostedQueue, payload, "Receipt Posted");
+    }
+
+    public void publishArWriteOff(Object payload) {
+        send(arWriteOffQueue, payload, "AR Write-Off");
+    }
+
+    public void publishArInterest(Object payload) {
+        send(arInterestQueue, payload, "AR Interest");
     }
 
     public void publishPurchaseOrderCreated(Object payload) {
@@ -93,8 +121,7 @@ public class TransactionalEventProducer {
 
     private void send(String routingKey, Object payload, String eventType) {
         try {
-            String eventJson = objectMapper.writeValueAsString(payload);
-            rabbitTemplate.convertAndSend(exchange, routingKey, eventJson);
+            rabbitTemplate.convertAndSend(exchange, routingKey, payload);
             log.info("✅ {} event sent to routing key: {}", eventType, routingKey);
         } catch (Exception e) {
             log.error("❌ Failed to publish {} event: {}", eventType, e.getMessage());

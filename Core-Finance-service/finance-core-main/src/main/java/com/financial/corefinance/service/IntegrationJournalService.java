@@ -88,6 +88,8 @@ public class IntegrationJournalService {
             journalLine.setAnalysisCode(lineRequest.getAnalysisCode());
             journalLine.setCurrencyCode(lineRequest.getCurrencyCode());
             journalLine.setExchangeRate(lineRequest.getExchangeRate());
+            journalLine.setForeignDebitAmount(lineRequest.getForeignDebitAmount());
+            journalLine.setForeignCreditAmount(lineRequest.getForeignCreditAmount());
             journalHeader.getJournalLines().add(journalLine);
         }
 

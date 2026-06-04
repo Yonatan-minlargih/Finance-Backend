@@ -24,8 +24,27 @@ public class InvoiceDto {
     private LocalDate dueDate;
     private BigDecimal totalAmount;
     private BigDecimal taxAmount;
+    private BigDecimal subtotalAmount;
+    private BigDecimal vatRate;
+    private String vendorTaxId;
+    private String vendorVatNumber;
+    private UUID glAccountingPeriodId;
+    private UUID glFiscalYearId;
     private String currency;
+    private BigDecimal foreignTotalAmount;
+    private BigDecimal exchangeRate;
     private Invoice.InvoiceStatus status;
     private Invoice.InvoiceType invoiceType;
     private List<InvoiceLineDto> lines;
+    private UUID glJournalId;
+    private String glJournalNumber;
+    private String approvedBy;
+    private LocalDateTime approvedAt;
+    private String postedBy;
+    private LocalDateTime postedAt;
+    private String voidedBy;
+    private LocalDateTime voidedAt;
+    private String voidReason;
+    private UUID glReversalJournalId;
+    private String glReversalJournalNumber;
 }

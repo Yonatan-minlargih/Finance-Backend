@@ -4,9 +4,10 @@ import com.financial.corefinance.domain.entity.Account;
 import com.financial.corefinance.domain.entity.JournalHeader;
 import com.financial.corefinance.domain.entity.JournalLine;
 import com.financial.corefinance.dto.eventDto.PayrollApprovedEventDto;
-import com.financial.corefinance.repository.AccountRepository;
+import com.financial.corefinance.integration.IntegrationAccountKeys;
 import com.financial.corefinance.repository.JournalHeaderRepository;
 import com.financial.corefinance.repository.JournalLineRepository;
+import com.financial.corefinance.service.IntegrationGlAccountService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.Exchange;
@@ -27,7 +28,7 @@ public class PayrollEventConsumer {
 
     private final JournalHeaderRepository journalHeaderRepository;
     private final JournalLineRepository journalLineRepository;
-    private final AccountRepository accountRepository;
+    private final IntegrationGlAccountService integrationGlAccountService;
 
     /**
      * Listens to payroll.approved events from the payroll-service.
@@ -60,9 +61,13 @@ public class PayrollEventConsumer {
             }
 
             // 1. Resolve Accounts dynamically (with bulletproof fallbacks)
-            Account expenseAccount = resolveAccount(tenantIdStr, "6100", Account.AccountType.EXPENSE, "Expense");
-            Account liabilityAccount = resolveAccount(tenantIdStr, "2100", Account.AccountType.LIABILITY, "Payable");
-            Account deductionsAccount = resolveAccount(tenantIdStr, "2200", Account.AccountType.LIABILITY, "Deduction");
+            integrationGlAccountService.seedIntegrationChart(tenantIdStr);
+            Account expenseAccount =
+                    integrationGlAccountService.resolveByKey(tenantIdStr, IntegrationAccountKeys.AP_EXPENSE_ALTERNATE);
+            Account liabilityAccount =
+                    integrationGlAccountService.resolveByKey(tenantIdStr, IntegrationAccountKeys.AP_PAYABLE);
+            Account deductionsAccount =
+                    integrationGlAccountService.resolveByKey(tenantIdStr, IntegrationAccountKeys.PAYROLL_DEDUCTIONS);
 
             // 2. Create Journal Header
             JournalHeader header = JournalHeader.builder()
@@ -129,58 +134,4 @@ public class PayrollEventConsumer {
         }
     }
 
-    private Account resolveAccount(String tenantId, String code, Account.AccountType type, String keyword) {
-        // Try exact match by code
-        return accountRepository.findByTenantIdAndAccountCode(tenantId, code)
-            .orElseGet(() -> {
-                try {
-                    // Proactively seed the missing required payroll account!
-                    log.info("🌱 Seeding missing required payroll account {} (Type: {}, Name: {})", code, type, keyword);
-                    Account account = new Account();
-                    account.setTenantId(tenantId);
-                    account.setAccountCode(code);
-                    account.setAccountName(keyword + " Account (" + code + ")");
-                    account.setAccountType(type);
-                    account.setNormalBalance(type == Account.AccountType.EXPENSE ? Account.NormalBalance.DEBIT : Account.NormalBalance.CREDIT);
-                    account.setIsActive(true);
-                    account.setAllowManualEntry(true);
-                    account.setIsConsolidated(false);
-                    account.setCurrencyCode("ETB");
-                    
-                    // Map IFRS categories for premium audit alignment
-                    if (type == Account.AccountType.EXPENSE) {
-                        account.setIFRSCategory(Account.IFRSCategory.OPERATING_EXPENSES);
-                    } else if (type == Account.AccountType.LIABILITY) {
-                        account.setIFRSCategory(Account.IFRSCategory.CURRENT_LIABILITIES);
-                    }
-                    
-                    return accountRepository.save(account);
-                } catch (Exception ex) {
-                    log.error("⚠️ Failed to seed default account {}, searching for general fallback...", code, ex);
-                }
-
-                // Try match by type
-                List<Account> accountsByType = accountRepository.findByTenantIdAndAccountType(tenantId, type);
-                if (!accountsByType.isEmpty()) {
-                    // Look for matching keyword in name
-                    for (Account acct : accountsByType) {
-                        if (acct.getAccountName() != null && acct.getAccountName().toLowerCase().contains(keyword.toLowerCase())) {
-                            return acct;
-                        }
-                    }
-                    return accountsByType.get(0);
-                }
-                // Try any active active account
-                List<Account> activeAccounts = accountRepository.findByTenantIdAndIsActiveTrue(tenantId);
-                if (!activeAccounts.isEmpty()) {
-                    return activeAccounts.get(0);
-                }
-                // Final fallback: fetch the first account in the repository
-                List<Account> all = accountRepository.findAll();
-                if (!all.isEmpty()) {
-                    return all.get(0);
-                }
-                throw new IllegalStateException("No accounts found in system to associate with journal entries!");
-            });
-    }
 }

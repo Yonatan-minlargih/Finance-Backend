@@ -32,7 +32,10 @@ public class SecurityUtil {
     }
 
     public String getTenantId() {
-        String tenantId = getClaim("tenantId");
+        String tenantId = getClaim("tenant_id");
+        if (tenantId == null) {
+            tenantId = getClaim("tenantId");
+        }
         return tenantId != null ? tenantId : "3fa85f64-5717-4562-b3fc-2c963f66afa6";
     }
 
@@ -41,6 +44,24 @@ public class SecurityUtil {
     }
 
     public String getUsername() {
-        return getClaim("username");
+        String username = getClaim("preferred_username");
+        if (username == null || username.isBlank()) {
+            username = getClaim("username");
+        }
+        return username;
+    }
+
+    /** Display name for audit fields (name, then username, then subject). */
+    public String getActorDisplayName() {
+        String name = getName();
+        if (name != null && !name.isBlank()) {
+            return name;
+        }
+        String username = getUsername();
+        if (username != null && !username.isBlank()) {
+            return username;
+        }
+        String userId = getUserId();
+        return userId != null ? userId : "unknown";
     }
 }

@@ -30,6 +30,61 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
     }
 
+    @ExceptionHandler(DuplicateVendorException.class)
+    public ResponseEntity<java.util.Map<String, String>> handleDuplicateVendorException(DuplicateVendorException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(
+                java.util.Map.of(
+                        "error", DuplicateVendorException.MESSAGE,
+                        "message", DuplicateVendorException.MESSAGE));
+    }
+
+    @ExceptionHandler(DuplicateInvoiceException.class)
+    public ResponseEntity<java.util.Map<String, String>> handleDuplicateInvoiceException(DuplicateInvoiceException e) {
+        String message = e.getMessage() != null ? e.getMessage() : DuplicateInvoiceException.MESSAGE;
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(
+                java.util.Map.of("error", message, "message", message));
+    }
+
+    @ExceptionHandler(ApInvoiceApprovalException.class)
+    public ResponseEntity<java.util.Map<String, String>> handleApInvoiceApprovalException(ApInvoiceApprovalException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                java.util.Map.of(
+                        "error", e.getMessage(),
+                        "message", e.getMessage()));
+    }
+
+    @ExceptionHandler(ClosedAccountingPeriodException.class)
+    public ResponseEntity<java.util.Map<String, String>> handleClosedAccountingPeriodException(
+            ClosedAccountingPeriodException e) {
+        String message = e.getMessage() != null ? e.getMessage() : ClosedAccountingPeriodException.MESSAGE;
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                java.util.Map.of("error", message, "message", message));
+    }
+
+    @ExceptionHandler(PurchaseOrderVendorMismatchException.class)
+    public ResponseEntity<java.util.Map<String, String>> handlePurchaseOrderVendorMismatchException(
+            PurchaseOrderVendorMismatchException e) {
+        String message = e.getMessage() != null ? e.getMessage() : PurchaseOrderVendorMismatchException.MESSAGE;
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                java.util.Map.of("error", message, "message", message));
+    }
+
+    @ExceptionHandler(PurchaseOrderInvoicedAmountExceededException.class)
+    public ResponseEntity<java.util.Map<String, String>> handlePurchaseOrderInvoicedAmountExceededException(
+            PurchaseOrderInvoicedAmountExceededException e) {
+        String message = e.getMessage() != null ? e.getMessage() : PurchaseOrderInvoicedAmountExceededException.MESSAGE;
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                java.util.Map.of("error", message, "message", message));
+    }
+
+    @ExceptionHandler(PurchaseOrderPaymentExceededException.class)
+    public ResponseEntity<java.util.Map<String, String>> handlePurchaseOrderPaymentExceededException(
+            PurchaseOrderPaymentExceededException e) {
+        String message = e.getMessage() != null ? e.getMessage() : PurchaseOrderPaymentExceededException.MESSAGE;
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                java.util.Map.of("error", message, "message", message));
+    }
+
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<String> handleIllegalStateException(IllegalStateException e) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());

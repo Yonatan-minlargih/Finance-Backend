@@ -1,7 +1,8 @@
 package com.financial.corefinance.service;
 
 import com.financial.corefinance.domain.entity.*;
-import com.financial.corefinance.exception.JournalPostingException;
+import com.financial.corefinance.dto.response.YearEndCloseResult;
+import com.financial.corefinance.exception.AccountValidationException;
 import com.financial.corefinance.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,9 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -24,283 +24,382 @@ public class YearEndClosingService {
     private final AccountRepository accountRepository;
     private final JournalHeaderRepository journalHeaderRepository;
     private final JournalLineRepository journalLineRepository;
-    private final PostingEngineService postingEngineService;
-    private final AuditLogRepository auditLogRepository;
+    private final TenantAccountingSettingsRepository settingsRepository;
+    private final NumberingSeriesService numberingSeriesService;
+    private final GlReportingService glReportingService;
 
-    @Transactional
-    public JournalHeader performYearEndClosing(UUID fiscalYearId, String closedBy) {
-        log.info("Performing year-end closing for fiscal year: {}", fiscalYearId);
-        
-        // Validate fiscal year exists and is not already closed
-        FiscalYear fiscalYear = fiscalYearRepository.findById(fiscalYearId)
-            .orElseThrow(() -> new JournalPostingException("Fiscal year not found: " + fiscalYearId));
-        
-        if (fiscalYear.getIsClosed()) {
-            throw new JournalPostingException("Fiscal year is already closed");
-        }
-        
-        // Validate all periods are closed
-        List<AccountingPeriod> openPeriods = accountingPeriodRepository.findOpenPeriodsByFiscalYear(
-            fiscalYear.getTenantId(), fiscalYearId);
-        if (!openPeriods.isEmpty()) {
-            throw new JournalPostingException("Cannot close fiscal year with open periods");
-        }
-        
-        // Get closing period (should be the last period)
-        List<AccountingPeriod> periods = accountingPeriodRepository.findByTenantIdAndFiscalYearIdOrderByPeriodNumber(
-            fiscalYear.getTenantId(), fiscalYearId);
-        if (periods.isEmpty()) {
-            throw new JournalPostingException("No accounting periods found for fiscal year");
-        }
-        
-        AccountingPeriod closingPeriod = periods.get(periods.size() - 1);
-        
-        // Create year-end closing journal
-        JournalHeader closingJournal = createYearEndClosingJournal(fiscalYear, closingPeriod, closedBy);
-        
-        // Post the closing journal
-        JournalHeader postedJournal = postingEngineService.createAndPostJournal(closingJournal);
-        
-        // Close the fiscal year
-        fiscalYear.setIsClosed(true);
-        fiscalYear.setClosedAt(LocalDate.now());
-        fiscalYear.setClosedBy(closedBy);
-        fiscalYearRepository.save(fiscalYear);
-        
-        // Create audit log
-        createAuditLog(fiscalYear, "Year-end closing completed", closedBy);
-        
-        log.info("Year-end closing completed successfully for fiscal year: {}", fiscalYear.getYearNumber());
-        return postedJournal;
-    }
+    private static final Set<Account.AccountType> NOMINAL_TYPES = EnumSet.of(
+            Account.AccountType.REVENUE,
+            Account.AccountType.EXPENSE,
+            Account.AccountType.GAIN,
+            Account.AccountType.LOSS
+    );
 
-    @Transactional
-    public JournalHeader reverseYearEndClosing(UUID originalClosingJournalId, String reversedBy) {
-        log.info("Reversing year-end closing journal: {}", originalClosingJournalId);
-        
-        // Validate original closing journal exists and is posted
-        JournalHeader originalJournal = journalHeaderRepository.findById(originalClosingJournalId)
-            .orElseThrow(() -> new JournalPostingException("Original closing journal not found"));
-        
-        if (originalJournal.getStatus() != JournalHeader.JournalStatus.POSTED) {
-            throw new JournalPostingException("Original journal must be posted to reverse");
+    private boolean isNominalAccount(Account account) {
+        if (NOMINAL_TYPES.contains(account.getAccountType())) {
+            return true;
         }
-        
-        if (originalJournal.getJournalType() != JournalHeader.JournalType.CLOSING) {
-            throw new JournalPostingException("Only closing journals can be reversed");
-        }
-        
-        // Create reversal journal
-        JournalHeader reversalJournal = postingEngineService.reverseJournal(originalClosingJournalId, 
-            "Year-end closing reversal - " + LocalDate.now());
-        
-        // Reopen the fiscal year
-        FiscalYear fiscalYear = fiscalYearRepository.findFiscalYearForDate(
-                originalJournal.getTenantId(), originalJournal.getJournalDate())
-            .orElseThrow(() -> new JournalPostingException("Fiscal year not found"));
-        
-        fiscalYear.setIsClosed(false);
-        fiscalYearRepository.save(fiscalYear);
-        
-        // Create audit log
-        createAuditLog(fiscalYear, "Year-end closing reversed", reversedBy);
-        
-        log.info("Year-end closing reversed successfully for fiscal year: {}", fiscalYear.getYearNumber());
-        return reversalJournal;
-    }
-
-    private JournalHeader createYearEndClosingJournal(FiscalYear fiscalYear, AccountingPeriod closingPeriod, String closedBy) {
-        log.info("Creating year-end closing journal for fiscal year: {}", fiscalYear.getYearNumber());
-        
-        String tenantId = fiscalYear.getTenantId();
-        
-        // Get revenue and expense accounts to close
-        List<Account> revenueAccounts = accountRepository.findByTenantIdAndAccountType(tenantId, Account.AccountType.REVENUE);
-        List<Account> expenseAccounts = accountRepository.findByTenantIdAndAccountType(tenantId, Account.AccountType.EXPENSE);
-        
-        // Get retained earnings account (should be an equity account)
-        Account retainedEarningsAccount = findRetainedEarningsAccount(tenantId);
-        
-        JournalHeader closingJournal = JournalHeader.builder()
-            .tenantId(tenantId)
-            .journalDate(closingPeriod.getEndDate())
-            .accountingPeriodId(closingPeriod.getId())
-            .journalType(JournalHeader.JournalType.CLOSING)
-            .description("Year-End Closing - Fiscal Year " + fiscalYear.getYearNumber())
-            .narration("Closing revenue and expense accounts to retained earnings")
-            .createdBy(closedBy)
-            .build();
-        
-        // Close revenue accounts (debit revenue, credit retained earnings)
-        for (Account revenueAccount : revenueAccounts) {
-            if (revenueAccount.getIsActive()) {
-                BigDecimal revenueBalance = calculateAccountBalance(revenueAccount.getId(), fiscalYear.getId());
-                if (revenueBalance.compareTo(BigDecimal.ZERO) > 0) {
-                    JournalLine revenueClosingLine = JournalLine.builder()
-                        .tenantId(tenantId)
-                        .accountId(revenueAccount.getId())
-                        .debitAmount(revenueBalance)
-                        .description("Close " + revenueAccount.getAccountCode() + " to retained earnings")
-                        .build();
-                    
-                    closingJournal.getJournalLines().add(revenueClosingLine);
-                    
-                    // Credit retained earnings
-                    JournalLine earningsCreditLine = JournalLine.builder()
-                        .tenantId(tenantId)
-                        .accountId(retainedEarningsAccount.getId())
-                        .creditAmount(revenueBalance)
-                        .description("Revenue from " + revenueAccount.getAccountCode())
-                        .build();
-                    
-                    closingJournal.getJournalLines().add(earningsCreditLine);
-                }
-            }
-        }
-        
-        // Close expense accounts (credit expense, debit retained earnings)
-        for (Account expenseAccount : expenseAccounts) {
-            if (expenseAccount.getIsActive()) {
-                BigDecimal expenseBalance = calculateAccountBalance(expenseAccount.getId(), fiscalYear.getId());
-                if (expenseBalance.compareTo(BigDecimal.ZERO) > 0) {
-                    JournalLine expenseClosingLine = JournalLine.builder()
-                        .tenantId(tenantId)
-                        .accountId(expenseAccount.getId())
-                        .creditAmount(expenseBalance)
-                        .description("Close " + expenseAccount.getAccountCode() + " to retained earnings")
-                        .build();
-                    
-                    closingJournal.getJournalLines().add(expenseClosingLine);
-                    
-                    // Debit retained earnings
-                    JournalLine earningsDebitLine = JournalLine.builder()
-                        .tenantId(tenantId)
-                        .accountId(retainedEarningsAccount.getId())
-                        .debitAmount(expenseBalance)
-                        .description("Expense from " + expenseAccount.getAccountCode())
-                        .build();
-                    
-                    closingJournal.getJournalLines().add(earningsDebitLine);
-                }
-            }
-        }
-        
-        if (closingJournal.getJournalLines().isEmpty()) {
-            throw new JournalPostingException("No balances to close for fiscal year: " + fiscalYear.getYearNumber());
-        }
-        
-        return closingJournal;
-    }
-
-    private Account findRetainedEarningsAccount(String tenantId) {
-        List<Account> equityAccounts = accountRepository.findByTenantIdAndAccountType(tenantId, Account.AccountType.EQUITY);
-        
-        // Look for account with "retained earnings" in the name or code
-        for (Account account : equityAccounts) {
-            if ((account.getAccountCode().toLowerCase().contains("retained") || 
-                 account.getAccountName().toLowerCase().contains("retained")) &&
-                (account.getAccountCode().toLowerCase().contains("earnings") || 
-                 account.getAccountName().toLowerCase().contains("earnings"))) {
-                return account;
-            }
-        }
-        
-        // If not found, create one
-        Account retainedEarningsAccount = Account.builder()
-            .tenantId(tenantId)
-            .accountCode("300000")
-            .accountName("Retained Earnings")
-            .accountType(Account.AccountType.EQUITY)
-            .normalBalance(Account.NormalBalance.CREDIT)
-            .ifrsCategory(Account.IFRSCategory.EQUITY)
-            .isActive(true)
-            .allowManualEntry(false) // Typically not allowed for retained earnings
-            .currencyCode("USD")
-            .build();
-        
-        return accountRepository.save(retainedEarningsAccount);
-    }
-
-    private BigDecimal calculateAccountBalance(UUID accountId, UUID fiscalYearId) {
-        // Calculate the year-to-date balance for an account within the fiscal year
-        // This would sum all journal lines for the account in all periods of the fiscal year
-        
-        log.debug("Calculating balance for account: {} in fiscal year: {}", accountId, fiscalYearId);
-        
-        // Get all accounting periods for the fiscal year
-        List<AccountingPeriod> periods = accountingPeriodRepository.findByTenantIdAndFiscalYearIdOrderByPeriodNumber(
-            com.financial.corefinance.domain.base.TenantContext.getCurrentTenant(), fiscalYearId);
-        
-        BigDecimal totalBalance = BigDecimal.ZERO;
-        
-        for (AccountingPeriod period : periods) {
-            // Get posted journal lines for this account in this period
-            List<JournalLine> journalLines = journalLineRepository.findPostedLinesByAccount(
-                com.financial.corefinance.domain.base.TenantContext.getCurrentTenant(), accountId);
-            
-            for (JournalLine line : journalLines) {
-                // Check if the journal is in this period
-                Optional<JournalHeader> journalHeader = journalHeaderRepository.findById(line.getJournalHeaderId());
-                if (journalHeader.isPresent() && journalHeader.get().getAccountingPeriodId().equals(period.getId())) {
-                    if (line.getDebitAmount() != null) {
-                        totalBalance = totalBalance.add(line.getDebitAmount());
-                    }
-                    if (line.getCreditAmount() != null) {
-                        totalBalance = totalBalance.subtract(line.getCreditAmount());
-                    }
-                }
-            }
-        }
-        
-        return totalBalance.abs(); // Return absolute value for closing purposes
-    }
-
-    @Transactional(readOnly = true)
-    public boolean canCloseFiscalYear(UUID fiscalYearId) {
-        FiscalYear fiscalYear = fiscalYearRepository.findById(fiscalYearId).orElse(null);
-        if (fiscalYear == null || fiscalYear.getIsClosed()) {
+        Account.IFRSCategory ifrs = account.getIFRSCategory();
+        if (ifrs == null) {
             return false;
         }
-        
-        // Check if all periods are closed
-        long openPeriodCount = accountingPeriodRepository.countOpenPeriodsByFiscalYear(
-            fiscalYear.getTenantId(), fiscalYearId);
-        
-        return openPeriodCount == 0;
+        return ifrs == Account.IFRSCategory.REVENUE
+                || ifrs == Account.IFRSCategory.OTHER_INCOME
+                || ifrs == Account.IFRSCategory.OPERATING_EXPENSES
+                || ifrs == Account.IFRSCategory.OTHER_EXPENSES;
     }
 
-    @Transactional(readOnly = true)
-    public List<AccountingPeriod> getOpenPeriods(UUID fiscalYearId) {
-        FiscalYear fiscalYear = fiscalYearRepository.findById(fiscalYearId).orElse(null);
-        if (fiscalYear == null) {
-            return List.of();
+    /**
+     * Execute the year-end closing process for a fiscal year.
+     */
+    @Transactional
+    public YearEndCloseResult closeFiscalYear(UUID fiscalYearId, String closedBy) {
+        log.info("Starting year-end close for fiscal year: {}", fiscalYearId);
+
+        FiscalYear fy = fiscalYearRepository.findById(fiscalYearId)
+                .orElseThrow(() -> new AccountValidationException("Fiscal year not found: " + fiscalYearId));
+
+        if (fy.getIsClosed()) {
+            throw new AccountValidationException("Fiscal year is already closed.");
         }
-        
-        return accountingPeriodRepository.findOpenPeriodsByFiscalYear(fiscalYear.getTenantId(), fiscalYearId);
+
+        String tenantId = fy.getTenantId();
+
+        // Prevent duplicate close
+        List<JournalHeader> existingClosing = journalHeaderRepository
+                .findByTenantIdAndJournalType(tenantId, JournalHeader.JournalType.CLOSING);
+        for (JournalHeader existing : existingClosing) {
+            if (existing.getAccountingPeriod() != null &&
+                existing.getAccountingPeriod().getFiscalYearId().equals(fiscalYearId) &&
+                existing.getStatus() == JournalHeader.JournalStatus.POSTED &&
+                (existing.getIsReversed() == null || !existing.getIsReversed())) {
+                throw new AccountValidationException("Year-end close has already been run for this fiscal year.");
+            }
+        }
+
+        // Validate all periods are closed
+        List<AccountingPeriod> openPeriods = accountingPeriodRepository
+                .findOpenPeriodsByFiscalYear(tenantId, fiscalYearId);
+        if (!openPeriods.isEmpty()) {
+            throw new AccountValidationException(
+                    "Cannot close year: " + openPeriods.size() + " period(s) are still open.");
+        }
+
+        // Get retained earnings account
+        TenantAccountingSettings settings = settingsRepository.findByTenantId(tenantId)
+                .orElseThrow(() -> new AccountValidationException(
+                        "Tenant accounting settings not configured. Please set the Retained Earnings account code in Settings."));
+
+        if (settings.getRetainedEarningsAccountCode() == null || settings.getRetainedEarningsAccountCode().isBlank()) {
+            throw new AccountValidationException(
+                    "Retained Earnings account code not configured in Settings.");
+        }
+
+        Account retainedEarnings = accountRepository
+                .findByTenantIdAndAccountCode(tenantId, settings.getRetainedEarningsAccountCode())
+                .orElseThrow(() -> new AccountValidationException(
+                        "Retained Earnings account not found: " + settings.getRetainedEarningsAccountCode()));
+
+        // Get last period for housing the closing entry
+        List<AccountingPeriod> periods = accountingPeriodRepository
+                .findByTenantIdAndFiscalYearIdOrderByPeriodNumber(tenantId, fiscalYearId);
+        if (periods.isEmpty()) {
+            throw new AccountValidationException("Fiscal year has no periods.");
+        }
+        AccountingPeriod lastPeriod = periods.get(periods.size() - 1);
+
+        // Temporarily reopen last period for the closing entry
+        boolean wasLastPeriodClosed = lastPeriod.getIsClosed();
+        if (wasLastPeriodClosed) {
+            lastPeriod.setIsClosed(false);
+            lastPeriod.setIsOpen(true);
+            accountingPeriodRepository.save(lastPeriod);
+        }
+
+        try {
+            List<Account> nominalAccounts = accountRepository.findByTenantIdAndIsActiveTrue(tenantId).stream()
+                    .filter(this::isNominalAccount)
+                    .toList();
+
+            BigDecimal totalRevenueCredits = BigDecimal.ZERO;
+            BigDecimal totalExpenseDebits = BigDecimal.ZERO;
+            List<JournalLine> closingLines = new ArrayList<>();
+            int lineNumber = 1;
+
+            for (Account account : nominalAccounts) {
+                // Close full current balance (opening + all posted activity), not FY journals only
+                BigDecimal currentBalance = glReportingService.calculateCurrentBalance(tenantId, account.getId());
+                if (currentBalance.compareTo(BigDecimal.ZERO) == 0) {
+                    continue;
+                }
+
+                JournalLine closingLine = JournalLine.builder()
+                        .tenantId(tenantId)
+                        .lineNumber(lineNumber++)
+                        .accountId(account.getId())
+                        .description("Year-end close: " + account.getAccountCode() + " " + account.getAccountName())
+                        .referenceType("YEAR_END_CLOSE")
+                        .currencyCode(account.getCurrencyCode())
+                        .build();
+
+                if (account.getNormalBalance() == Account.NormalBalance.CREDIT) {
+                    if (currentBalance.compareTo(BigDecimal.ZERO) > 0) {
+                        closingLine.setDebitAmount(currentBalance);
+                        closingLine.setCreditAmount(BigDecimal.ZERO);
+                        totalRevenueCredits = totalRevenueCredits.add(currentBalance);
+                    } else {
+                        closingLine.setCreditAmount(currentBalance.abs());
+                        closingLine.setDebitAmount(BigDecimal.ZERO);
+                        totalRevenueCredits = totalRevenueCredits.subtract(currentBalance.abs());
+                    }
+                } else {
+                    if (currentBalance.compareTo(BigDecimal.ZERO) > 0) {
+                        closingLine.setCreditAmount(currentBalance);
+                        closingLine.setDebitAmount(BigDecimal.ZERO);
+                        totalExpenseDebits = totalExpenseDebits.add(currentBalance);
+                    } else {
+                        closingLine.setDebitAmount(currentBalance.abs());
+                        closingLine.setCreditAmount(BigDecimal.ZERO);
+                        totalExpenseDebits = totalExpenseDebits.subtract(currentBalance.abs());
+                    }
+                }
+                closingLines.add(closingLine);
+            }
+
+            BigDecimal netIncome = totalRevenueCredits.subtract(totalExpenseDebits);
+
+            if (netIncome.compareTo(BigDecimal.ZERO) != 0) {
+                JournalLine reLine = JournalLine.builder()
+                        .tenantId(tenantId)
+                        .lineNumber(lineNumber)
+                        .accountId(retainedEarnings.getId())
+                        .description("Year-end close: Net income to Retained Earnings")
+                        .referenceType("YEAR_END_CLOSE")
+                        .currencyCode(retainedEarnings.getCurrencyCode())
+                        .build();
+                if (netIncome.compareTo(BigDecimal.ZERO) > 0) {
+                    reLine.setCreditAmount(netIncome);
+                    reLine.setDebitAmount(BigDecimal.ZERO);
+                } else {
+                    reLine.setDebitAmount(netIncome.abs());
+                    reLine.setCreditAmount(BigDecimal.ZERO);
+                }
+                closingLines.add(reLine);
+            }
+
+            int nominalClosedCount = (int) closingLines.stream()
+                    .filter(l -> !retainedEarnings.getId().equals(l.getAccountId()))
+                    .count();
+
+            if (closingLines.isEmpty()) {
+                fy.setIsClosed(true);
+                fy.setClosedAt(LocalDate.now());
+                fy.setClosedBy(closedBy);
+                fiscalYearRepository.save(fy);
+                log.info("Year-end close: fiscal year marked closed with no P&L balances in year {}", fy.getYearName());
+                return YearEndCloseResult.builder()
+                        .closingJournal(null)
+                        .nominalAccountsClosed(0)
+                        .netIncome(BigDecimal.ZERO)
+                        .fiscalYearMarkedClosed(true)
+                        .build();
+            }
+
+            String journalNumber;
+            try {
+                journalNumber = numberingSeriesService.getNextNumber("JOURNAL").get("nextNumber");
+            } catch (Exception e) {
+                journalNumber = "CLO-" + fy.getYearNumber() + "-" + UUID.randomUUID().toString().substring(0, 4).toUpperCase();
+            }
+
+            JournalHeader closingJournal = JournalHeader.builder()
+                    .tenantId(tenantId)
+                    .journalNumber(journalNumber)
+                    .journalDate(fy.getEndDate())
+                    .accountingPeriodId(lastPeriod.getId())
+                    .journalType(JournalHeader.JournalType.CLOSING)
+                    .description("Automated year-end closing for " + fy.getYearName())
+                    .sourceSystem("YEAR_END_CLOSE")
+                    .status(JournalHeader.JournalStatus.POSTED)
+                    .postedAt(LocalDateTime.now())
+                    .postedBy(closedBy)
+                    .build();
+
+            JournalHeader savedHeader = journalHeaderRepository.save(closingJournal);
+
+            for (JournalLine line : closingLines) {
+                line.setJournalHeaderId(savedHeader.getId());
+            }
+            journalLineRepository.saveAll(closingLines);
+
+            BigDecimal totalDebit = closingLines.stream()
+                    .map(l -> l.getDebitAmount() != null ? l.getDebitAmount() : BigDecimal.ZERO)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal totalCredit = closingLines.stream()
+                    .map(l -> l.getCreditAmount() != null ? l.getCreditAmount() : BigDecimal.ZERO)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            savedHeader.setTotalDebit(totalDebit);
+            savedHeader.setTotalCredit(totalCredit);
+            journalHeaderRepository.save(savedHeader);
+
+            // Clear opening balances on closed P&L accounts so current balance stays at zero
+            Set<UUID> closedNominalIds = new HashSet<>();
+            for (JournalLine line : closingLines) {
+                if (!retainedEarnings.getId().equals(line.getAccountId())) {
+                    closedNominalIds.add(line.getAccountId());
+                }
+            }
+            for (UUID accountId : closedNominalIds) {
+                accountRepository.findById(accountId).ifPresent(nominal -> {
+                    if (nominal.getOpeningBalance() != null
+                            && nominal.getOpeningBalance().compareTo(BigDecimal.ZERO) != 0) {
+                        nominal.setOpeningBalance(BigDecimal.ZERO);
+                        accountRepository.save(nominal);
+                    }
+                });
+            }
+
+            fy.setIsClosed(true);
+            fy.setClosedAt(LocalDate.now());
+            fy.setClosedBy(closedBy);
+            fiscalYearRepository.save(fy);
+
+            log.info("Year-end close completed. Net income: {}. Journal: {}", netIncome, savedHeader.getJournalNumber());
+            return YearEndCloseResult.builder()
+                    .closingJournal(savedHeader)
+                    .nominalAccountsClosed(nominalClosedCount)
+                    .netIncome(netIncome)
+                    .fiscalYearMarkedClosed(true)
+                    .build();
+
+        } finally {
+            if (wasLastPeriodClosed) {
+                lastPeriod.setIsClosed(true);
+                lastPeriod.setIsOpen(false);
+                accountingPeriodRepository.save(lastPeriod);
+            }
+        }
     }
 
-    private void createAuditLog(FiscalYear fiscalYear, String action, String performedBy) {
-        AuditLog auditLog = AuditLog.builder()
-            .tenantId(fiscalYear.getTenantId())
-            .entityType("FiscalYear")
-            .entityId(fiscalYear.getId())
-            .action(AuditLog.AuditAction.CREATE)
-            .newValue("Fiscal Year: " + fiscalYear.getYearNumber() + ", Action: " + action)
-            .userId(performedBy)
-            .additionalInfo("Year-end closing operation")
-            .moduleName("YearEndClosing")
-            .functionName("performYearEndClosing")
-            .businessTransactionId("FY-" + fiscalYear.getYearNumber())
-            .build();
-        
-        auditLogRepository.save(auditLog);
-    }
+    /**
+     * Reopen a closed fiscal year by reversing the closing journal entries.
+     */
+    @Transactional
+    public JournalHeader reopenFiscalYear(UUID fiscalYearId, String reopenedBy) {
+        log.info("Reopening fiscal year: {}", fiscalYearId);
 
-    @Transactional(readOnly = true)
-    public List<JournalHeader> getClosingJournals(UUID fiscalYearId) {
-        return journalHeaderRepository.findByTenantIdAndJournalTypeAndFiscalYearId(
-            com.financial.corefinance.domain.base.TenantContext.getCurrentTenant(),
-            JournalHeader.JournalType.CLOSING,
-            fiscalYearId);
+        FiscalYear fy = fiscalYearRepository.findById(fiscalYearId)
+                .orElseThrow(() -> new AccountValidationException("Fiscal year not found: " + fiscalYearId));
+
+        if (!fy.getIsClosed()) {
+            throw new AccountValidationException("Fiscal year is not closed.");
+        }
+
+        String tenantId = fy.getTenantId();
+
+        // Find the closing journal for this year
+        JournalHeader closingJournal = null;
+        List<JournalHeader> closingJournals = journalHeaderRepository
+                .findByTenantIdAndJournalType(tenantId, JournalHeader.JournalType.CLOSING);
+        for (JournalHeader cj : closingJournals) {
+            if (cj.getAccountingPeriod() != null &&
+                cj.getAccountingPeriod().getFiscalYearId().equals(fiscalYearId) &&
+                cj.getStatus() == JournalHeader.JournalStatus.POSTED &&
+                (cj.getIsReversed() == null || !cj.getIsReversed())) {
+                closingJournal = cj;
+                break;
+            }
+        }
+
+        JournalHeader reversalJournal = null;
+
+        if (closingJournal != null) {
+            AccountingPeriod period = accountingPeriodRepository.findById(closingJournal.getAccountingPeriodId())
+                    .orElseThrow(() -> new AccountValidationException("Period not found"));
+            boolean wasClosed = period.getIsClosed();
+            if (wasClosed) {
+                period.setIsClosed(false);
+                period.setIsOpen(true);
+                accountingPeriodRepository.save(period);
+            }
+
+            try {
+                List<JournalLine> originalLines = journalLineRepository.findByTenantIdAndJournalHeaderId(
+                        tenantId, closingJournal.getId());
+
+                String reversalNumber;
+                try {
+                    reversalNumber = numberingSeriesService.getNextNumber("JOURNAL").get("nextNumber");
+                } catch (Exception e) {
+                    reversalNumber = "REV-" + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
+                }
+
+                reversalJournal = JournalHeader.builder()
+                        .tenantId(tenantId)
+                        .journalNumber(reversalNumber)
+                        .journalDate(LocalDate.now())
+                        .accountingPeriodId(closingJournal.getAccountingPeriodId())
+                        .journalType(JournalHeader.JournalType.REVERSAL)
+                        .description("Reversal of year-end closing for " + fy.getYearName())
+                        .sourceSystem("YEAR_END_REOPEN")
+                        .status(JournalHeader.JournalStatus.POSTED)
+                        .originalJournalId(closingJournal.getId())
+                        .postedAt(LocalDateTime.now())
+                        .postedBy(reopenedBy)
+                        .build();
+
+                JournalHeader savedReversal = journalHeaderRepository.save(reversalJournal);
+
+                List<JournalLine> reversalLines = new ArrayList<>();
+                int lineNum = 1;
+                for (JournalLine original : originalLines) {
+                    JournalLine reversal = JournalLine.builder()
+                            .tenantId(tenantId)
+                            .journalHeaderId(savedReversal.getId())
+                            .lineNumber(lineNum++)
+                            .accountId(original.getAccountId())
+                            .debitAmount(original.getCreditAmount() != null ? original.getCreditAmount() : BigDecimal.ZERO)
+                            .creditAmount(original.getDebitAmount() != null ? original.getDebitAmount() : BigDecimal.ZERO)
+                            .description("Reversal: " + (original.getDescription() != null ? original.getDescription() : ""))
+                            .referenceType("YEAR_END_REVERSAL")
+                            .currencyCode(original.getCurrencyCode())
+                            .build();
+                    reversalLines.add(reversal);
+                }
+                journalLineRepository.saveAll(reversalLines);
+
+                BigDecimal totalDebit = reversalLines.stream()
+                        .map(l -> l.getDebitAmount() != null ? l.getDebitAmount() : BigDecimal.ZERO)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                BigDecimal totalCredit = reversalLines.stream()
+                        .map(l -> l.getCreditAmount() != null ? l.getCreditAmount() : BigDecimal.ZERO)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                savedReversal.setTotalDebit(totalDebit);
+                savedReversal.setTotalCredit(totalCredit);
+                journalHeaderRepository.save(savedReversal);
+
+                closingJournal.setIsReversed(true);
+                closingJournal.setReversedBy(reopenedBy);
+                closingJournal.setReversedAt(LocalDateTime.now());
+                closingJournal.setReversalReason("Fiscal year reopened");
+                journalHeaderRepository.save(closingJournal);
+
+                reversalJournal = savedReversal;
+            } finally {
+                if (wasClosed) {
+                    period.setIsClosed(true);
+                    period.setIsOpen(false);
+                    accountingPeriodRepository.save(period);
+                }
+            }
+        }
+
+        fy.setIsClosed(false);
+        fy.setClosedAt(null);
+        fy.setClosedBy(null);
+        fiscalYearRepository.save(fy);
+
+        log.info("Fiscal year {} reopened.", fy.getYearName());
+        return reversalJournal;
     }
 }

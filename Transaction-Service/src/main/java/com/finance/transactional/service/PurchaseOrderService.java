@@ -19,6 +19,7 @@ public class PurchaseOrderService {
     private final PurchaseOrderRepository repository;
     private final PurchaseOrderMapper mapper;
     private final DomainEventPublisher domainEventPublisher;
+    private final PurchaseOrderLinkageService purchaseOrderLinkageService;
 
     @Transactional
     public PurchaseOrderDto createPurchaseOrder(UUID tenantId, PurchaseOrderDto dto) {
@@ -26,10 +27,8 @@ public class PurchaseOrderService {
         purchaseOrder.setTenantId(tenantId);
         PurchaseOrder saved = repository.save(purchaseOrder);
         PurchaseOrderDto resultDto = mapper.toDto(saved);
-
-        // Publish event
+        purchaseOrderLinkageService.enrichDto(resultDto, tenantId);
         domainEventPublisher.publish("purchase-order-created", resultDto);
-
         return resultDto;
     }
 
@@ -37,7 +36,7 @@ public class PurchaseOrderService {
     public PurchaseOrderDto updatePurchaseOrder(UUID tenantId, UUID id, PurchaseOrderDto dto) {
         PurchaseOrder existing = getExistingPurchaseOrder(tenantId, id);
         PurchaseOrder updated = mapper.toEntity(dto);
-        
+
         existing.setPoNumber(updated.getPoNumber());
         existing.setVendor(updated.getVendor());
         existing.setOrderDate(updated.getOrderDate());
@@ -45,20 +44,25 @@ public class PurchaseOrderService {
         existing.setTotalAmount(updated.getTotalAmount());
         existing.setCurrency(updated.getCurrency());
         existing.setStatus(updated.getStatus());
-        
+
         PurchaseOrder saved = repository.save(existing);
-        return mapper.toDto(saved);
+        PurchaseOrderDto resultDto = mapper.toDto(saved);
+        purchaseOrderLinkageService.enrichDto(resultDto, tenantId);
+        return resultDto;
     }
 
     @Transactional(readOnly = true)
     public PurchaseOrderDto getPurchaseOrderById(UUID tenantId, UUID id) {
-        return mapper.toDto(getExistingPurchaseOrder(tenantId, id));
+        PurchaseOrderDto dto = mapper.toDto(getExistingPurchaseOrder(tenantId, id));
+        purchaseOrderLinkageService.enrichDto(dto, tenantId);
+        return dto;
     }
 
     @Transactional(readOnly = true)
     public List<PurchaseOrderDto> getAllPurchaseOrders(UUID tenantId) {
         return repository.findByTenantId(tenantId).stream()
                 .map(mapper::toDto)
+                .peek(dto -> purchaseOrderLinkageService.enrichDto(dto, tenantId))
                 .toList();
     }
 

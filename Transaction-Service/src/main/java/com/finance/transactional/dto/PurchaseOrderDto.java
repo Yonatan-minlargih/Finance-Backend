@@ -23,4 +23,16 @@ public class PurchaseOrderDto {
     private BigDecimal totalAmount;
     private String currency;
     private PurchaseOrder.POStatus status;
+
+    /** Sum of AP invoice totals linked to this PO (computed). */
+    private BigDecimal invoicedAmount;
+
+    /** Sum of payments linked to this PO (computed). */
+    private BigDecimal paidAmount;
+
+    /** PO total minus invoiced (remaining to invoice). */
+    private BigDecimal remainingBalance;
+
+    /** PO total minus paid (remaining to pay). */
+    private BigDecimal remainingPaymentBalance;
 }

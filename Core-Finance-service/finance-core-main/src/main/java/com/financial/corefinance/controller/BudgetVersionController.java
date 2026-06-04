@@ -65,14 +65,38 @@ public class BudgetVersionController {
         return ResponseEntity.ok(versions);
     }
 
+    @PutMapping("/{budgetVersionId}")
+    @Operation(summary = "Update budget version metadata", description = "Updates name, description, totals, and effective dates")
+    public ResponseEntity<BudgetVersionResponse> updateBudgetVersion(
+            @PathVariable UUID budgetVersionId,
+            @Valid @RequestBody BudgetVersionRequest request) {
+        BudgetVersion updates = toBudgetVersionEntity(request);
+        BudgetVersion updated = budgetService.updateBudgetVersion(budgetVersionId, updates);
+        return ResponseEntity.ok(toBudgetVersionResponse(updated));
+    }
+
     @PostMapping("/{budgetVersionId}/set-current")
-    @Operation(summary = "Set as current budget version", description = "Sets this budget version as the current active one")
+    @Operation(
+            summary = "Set as current (working) version",
+            description = "Marks the approved version used for budget vs actual monitoring and overspend checks. "
+                    + "Only one current version per budget.")
     public ResponseEntity<BudgetVersionResponse> setCurrentBudgetVersion(
             @Parameter(description = "Budget Version ID") @PathVariable UUID budgetVersionId) {
         log.info("Setting budget version as current: {}", budgetVersionId);
 
         BudgetVersion updatedVersion = budgetService.setCurrentBudgetVersion(budgetVersionId);
         return ResponseEntity.ok(toBudgetVersionResponse(updatedVersion));
+    }
+
+    @PostMapping("/{budgetVersionId}/set-baseline")
+    @Operation(
+            summary = "Set as baseline (reference) version",
+            description = "Marks the original approved plan kept for comparison in version-compare reports. "
+                    + "Does not drive live actuals; only one baseline per budget.")
+    public ResponseEntity<BudgetVersionResponse> setBaselineBudgetVersion(
+            @PathVariable UUID budgetVersionId) {
+        BudgetVersion updated = budgetService.setBaselineBudgetVersion(budgetVersionId);
+        return ResponseEntity.ok(toBudgetVersionResponse(updated));
     }
 
     @PostMapping("/{budgetVersionId}/approve")

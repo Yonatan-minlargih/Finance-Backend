@@ -15,6 +15,8 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
 
     Optional<Account> findByTenantIdAndAccountCode(String tenantId, String accountCode);
 
+    Optional<Account> findByTenantIdAndId(String tenantId, UUID id);
+
     List<Account> findByTenantIdAndParentAccountIdIsNull(String tenantId);
 
     List<Account> findByTenantIdAndParentAccountId(String tenantId, UUID parentAccountId);

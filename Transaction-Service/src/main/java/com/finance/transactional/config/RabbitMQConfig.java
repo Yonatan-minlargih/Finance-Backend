@@ -7,10 +7,14 @@ import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.support.converter.DefaultJackson2JavaTypeMapper;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Configuration
 @Slf4j
@@ -40,8 +44,20 @@ public class RabbitMQConfig {
     @Value("${spring.rabbitmq.custom.sales-invoice-created-queue}")
     private String salesInvoiceCreatedQueue;
 
+    @Value("${spring.rabbitmq.custom.sales-invoice-approved-queue}")
+    private String salesInvoiceApprovedQueue;
+
     @Value("${spring.rabbitmq.custom.receipt-created-queue}")
     private String receiptCreatedQueue;
+
+    @Value("${spring.rabbitmq.custom.receipt-posted-queue}")
+    private String receiptPostedQueue;
+
+    @Value("${spring.rabbitmq.custom.ar-write-off-queue}")
+    private String arWriteOffQueue;
+
+    @Value("${spring.rabbitmq.custom.ar-interest-queue}")
+    private String arInterestQueue;
 
     @Value("${spring.rabbitmq.custom.purchase-order-created-queue}")
     private String purchaseOrderCreatedQueue;
@@ -130,6 +146,16 @@ public class RabbitMQConfig {
     }
 
     @Bean
+    public Queue salesInvoiceApprovedQueueBean() {
+        return QueueBuilder.durable(salesInvoiceApprovedQueue).build();
+    }
+
+    @Bean
+    public Binding salesInvoiceApprovedBinding(Queue salesInvoiceApprovedQueueBean, DirectExchange transactionalExchange) {
+        return BindingBuilder.bind(salesInvoiceApprovedQueueBean).to(transactionalExchange).with(this.salesInvoiceApprovedQueue);
+    }
+
+    @Bean
     public Queue receiptCreatedQueue() {
         return QueueBuilder.durable(receiptCreatedQueue).build();
     }
@@ -137,6 +163,36 @@ public class RabbitMQConfig {
     @Bean
     public Binding receiptCreatedBinding(Queue receiptCreatedQueue, DirectExchange transactionalExchange) {
         return BindingBuilder.bind(receiptCreatedQueue).to(transactionalExchange).with(this.receiptCreatedQueue);
+    }
+
+    @Bean
+    public Queue receiptPostedQueueBean() {
+        return QueueBuilder.durable(receiptPostedQueue).build();
+    }
+
+    @Bean
+    public Binding receiptPostedBinding(Queue receiptPostedQueueBean, DirectExchange transactionalExchange) {
+        return BindingBuilder.bind(receiptPostedQueueBean).to(transactionalExchange).with(this.receiptPostedQueue);
+    }
+
+    @Bean
+    public Queue arWriteOffQueueBean() {
+        return QueueBuilder.durable(arWriteOffQueue).build();
+    }
+
+    @Bean
+    public Binding arWriteOffBinding(Queue arWriteOffQueueBean, DirectExchange transactionalExchange) {
+        return BindingBuilder.bind(arWriteOffQueueBean).to(transactionalExchange).with(this.arWriteOffQueue);
+    }
+
+    @Bean
+    public Queue arInterestQueueBean() {
+        return QueueBuilder.durable(arInterestQueue).build();
+    }
+
+    @Bean
+    public Binding arInterestBinding(Queue arInterestQueueBean, DirectExchange transactionalExchange) {
+        return BindingBuilder.bind(arInterestQueueBean).to(transactionalExchange).with(this.arInterestQueue);
     }
 
     @Bean
@@ -181,7 +237,36 @@ public class RabbitMQConfig {
 
     @Bean
     public Jackson2JsonMessageConverter jacksonConverter(ObjectMapper mapper) {
-        return new Jackson2JsonMessageConverter(mapper);
+        Jackson2JsonMessageConverter converter = new Jackson2JsonMessageConverter(mapper);
+        DefaultJackson2JavaTypeMapper typeMapper = new DefaultJackson2JavaTypeMapper();
+        Map<String, Class<?>> idClassMapping = new HashMap<>();
+        idClassMapping.put(
+                "com.financial.corefinance.dto.event.ApInvoiceGlPostResult",
+                com.finance.transactional.dto.event.ApInvoiceGlPostResult.class);
+        idClassMapping.put(
+                "com.financial.corefinance.dto.event.ApInvoiceApprovedEvent",
+                com.finance.transactional.dto.event.ApInvoiceApprovedEvent.class);
+        idClassMapping.put(
+                "com.financial.corefinance.dto.event.ArSalesInvoiceApprovedEvent",
+                com.finance.transactional.dto.event.ArSalesInvoiceApprovedEvent.class);
+        idClassMapping.put(
+                "com.financial.corefinance.dto.event.ArSalesInvoiceGlPostResult",
+                com.finance.transactional.dto.event.ArSalesInvoiceGlPostResult.class);
+        idClassMapping.put(
+                "com.financial.corefinance.dto.event.ArReceiptPostedEvent",
+                com.finance.transactional.dto.event.ArReceiptPostedEvent.class);
+        idClassMapping.put(
+                "com.financial.corefinance.dto.event.ArReceiptGlPostResult",
+                com.finance.transactional.dto.event.ArReceiptGlPostResult.class);
+        idClassMapping.put(
+                "com.financial.corefinance.dto.event.ApPaymentPostedEvent",
+                com.finance.transactional.dto.event.ApPaymentPostedEvent.class);
+        idClassMapping.put(
+                "com.financial.corefinance.dto.event.ApPaymentGlPostResult",
+                com.finance.transactional.dto.event.ApPaymentGlPostResult.class);
+        typeMapper.setIdClassMapping(idClassMapping);
+        converter.setJavaTypeMapper(typeMapper);
+        return converter;
     }
 
     @Bean

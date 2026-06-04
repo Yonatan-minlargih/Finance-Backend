@@ -104,8 +104,22 @@ public class BudgetLine extends BaseEntity {
     @Column(name = "notes", length = 1000)
     private String notes;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "line_category", length = 30)
+    @Builder.Default
+    private LineCategory lineCategory = LineCategory.BUDGET;
+
+    @Column(name = "prior_year_actual_amount", precision = 19, scale = 4)
+    private BigDecimal priorYearActualAmount;
+
     @Column(name = "last_updated_at")
     private LocalDate lastUpdatedAt;
+
+    public enum LineCategory {
+        BUDGET,
+        REVENUE_FORECAST,
+        EXPENDITURE_FORECAST
+    }
 
     @PrePersist
     @PreUpdate

@@ -4,6 +4,9 @@ import com.financial.corefinance.dto.request.AccountRequest;
 import com.financial.corefinance.dto.response.AccountResponse;
 import com.financial.corefinance.domain.entity.Account;
 import com.financial.corefinance.service.AccountService;
+import com.financial.corefinance.service.GlReportingService;
+import com.financial.corefinance.service.IntegrationGlAccountService;
+import com.financial.corefinance.service.IntegrationGlAccountService.SeedResult;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -32,6 +35,20 @@ import java.util.stream.Collectors;
 public class AccountController {
 
     private final AccountService accountService;
+    private final GlReportingService glReportingService;
+    private final IntegrationGlAccountService integrationGlAccountService;
+
+    @PostMapping("/seed-integration-chart")
+    @Operation(
+            summary = "Seed integration chart of accounts",
+            description =
+                    "Creates or reactivates GL accounts required for automatic posting (AP, AR, Payroll). "
+                            + "Definitions live in integration-gl-accounts.yml.")
+    public ResponseEntity<List<SeedResult>> seedIntegrationChart() {
+        String tenantId = com.financial.corefinance.domain.base.TenantContext.getCurrentTenant();
+        List<SeedResult> results = integrationGlAccountService.seedIntegrationChart(tenantId);
+        return ResponseEntity.ok(results);
+    }
 
     @PostMapping
     // @PreAuthorize("hasRole('FINANCE_MANAGER')")
@@ -235,6 +252,14 @@ public class AccountController {
         response.setOpeningBalanceDate(account.getOpeningBalanceDate());
         response.setCurrencyCode(account.getCurrencyCode());
         response.setIfrsCategory(account.getIFRSCategory());
+        // Calculate dynamic current balance
+        try {
+            response.setCurrentBalance(glReportingService.calculateCurrentBalance(
+                    account.getTenantId(), account.getId()));
+        } catch (Exception e) {
+            log.debug("Could not calculate balance for account {}: {}", account.getAccountCode(), e.getMessage());
+            response.setCurrentBalance(account.getOpeningBalance());
+        }
         return response;
     }
 }

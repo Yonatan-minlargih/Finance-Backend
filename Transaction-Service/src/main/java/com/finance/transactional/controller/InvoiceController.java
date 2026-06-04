@@ -1,7 +1,12 @@
 package com.finance.transactional.controller;
 
+import com.finance.transactional.dto.ApVatTaxReportLineDto;
+import com.finance.transactional.dto.InvoiceAuditTrailDto;
 import com.finance.transactional.dto.InvoiceDto;
+import com.finance.transactional.dto.InvoiceVoidRequest;
+import com.finance.transactional.service.ApTaxReportService;
 import com.finance.transactional.service.InvoiceService;
+import java.time.LocalDate;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -25,6 +30,7 @@ import java.util.UUID;
 public class InvoiceController {
 
     private final InvoiceService invoiceService;
+    private final ApTaxReportService apTaxReportService;
 
     @PostMapping("/add")
     public ResponseEntity<InvoiceDto> createInvoice(
@@ -50,6 +56,16 @@ public class InvoiceController {
         return ResponseEntity.ok(invoiceService.getAllInvoices(tenantId));
     }
 
+    @GetMapping("/tax-report/vat-input")
+    @Operation(summary = "VAT input tax report", description = "Lists AP invoices with VAT in the invoice-date range (Ethiopian VAT reporting).")
+    public ResponseEntity<List<ApVatTaxReportLineDto>> vatInputTaxReport(
+            @PathVariable UUID tenantId,
+            @org.springframework.web.bind.annotation.RequestParam LocalDate fromDate,
+            @org.springframework.web.bind.annotation.RequestParam LocalDate toDate) {
+
+        return ResponseEntity.ok(apTaxReportService.vatInputReport(tenantId, fromDate, toDate));
+    }
+
     @PostMapping("/approve/{id}")
     public ResponseEntity<InvoiceDto> approveInvoice(
             @PathVariable UUID tenantId,
@@ -57,6 +73,26 @@ public class InvoiceController {
 
         InvoiceDto approved = invoiceService.approveInvoice(tenantId, id);
         return ResponseEntity.ok(approved);
+    }
+
+    @PostMapping("/void/{id}")
+    @Operation(summary = "Void / reverse invoice", description = "Reverses the GL accrual journal and marks the invoice cancelled")
+    public ResponseEntity<InvoiceDto> voidInvoice(
+            @PathVariable UUID tenantId,
+            @PathVariable UUID id,
+            @Valid @RequestBody InvoiceVoidRequest request) {
+
+        return ResponseEntity.ok(
+                invoiceService.voidInvoice(tenantId, id, request.getReversalReason()));
+    }
+
+    @GetMapping("/audit/{id}")
+    @Operation(summary = "Invoice audit trail", description = "Created, approved, posted, and void timestamps with actors")
+    public ResponseEntity<InvoiceAuditTrailDto> getInvoiceAuditTrail(
+            @PathVariable UUID tenantId,
+            @PathVariable UUID id) {
+
+        return ResponseEntity.ok(invoiceService.getInvoiceAuditTrail(tenantId, id));
     }
 
     @org.springframework.web.bind.annotation.PutMapping("/update/{id}")

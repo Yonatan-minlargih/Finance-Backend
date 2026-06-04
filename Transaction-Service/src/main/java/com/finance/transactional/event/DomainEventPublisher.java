@@ -19,7 +19,11 @@ public class DomainEventPublisher {
             case "bank-transaction-created" -> transactionalEventProducer.publishBankTransactionCreated(payload);
             case "bank-transaction-updated" -> transactionalEventProducer.publishBankTransactionCreated(payload); // We can reuse the same producer method or add a new one
             case "sales-invoice-created" -> transactionalEventProducer.publishSalesInvoiceCreated(payload);
+            case "sales-invoice-approved" -> transactionalEventProducer.publishSalesInvoiceApproved(payload);
             case "receipt-created" -> transactionalEventProducer.publishReceiptCreated(payload);
+            case "receipt-posted" -> transactionalEventProducer.publishReceiptPosted(payload);
+            case "ar-write-off" -> transactionalEventProducer.publishArWriteOff(payload);
+            case "ar-interest" -> transactionalEventProducer.publishArInterest(payload);
             case "purchase-order-created" -> transactionalEventProducer.publishPurchaseOrderCreated(payload);
             case "vendor-created" -> transactionalEventProducer.publishVendorCreated(payload);
             case "customer-created" -> transactionalEventProducer.publishCustomerCreated(payload);

@@ -13,7 +13,7 @@ import org.mapstruct.Named;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = {JournalLineAccountEnricher.class})
 public interface JournalMapper {
 
     @Mapping(target = "id", ignore = true)
@@ -62,11 +62,32 @@ public interface JournalMapper {
 
     @Mapping(target = "journalId", source = "id")
     @Mapping(target = "accountingPeriodName", ignore = true)
+    @Mapping(target = "fiscalYearId", ignore = true)
+    @Mapping(target = "fiscalYearName", ignore = true)
     @Mapping(target = "journalLines", source = "journalLines", qualifiedByName = "mapJournalLineResponses")
     JournalHeaderResponse toJournalHeaderResponse(JournalHeader journalHeader);
 
-    @Mapping(target = "accountCode", source = "account.accountCode")
-    @Mapping(target = "accountName", source = "account.accountName")
+    @org.mapstruct.AfterMapping
+    default void populateMetadata(JournalHeader journalHeader, @MappingTarget JournalHeaderResponse response) {
+        response.setTotalDebit(journalHeader.getTotalDebit());
+        response.setTotalCredit(journalHeader.getTotalCredit());
+
+        if (journalHeader.getAccountingPeriod() == null) {
+            return;
+        }
+        if (!org.hibernate.Hibernate.isInitialized(journalHeader.getAccountingPeriod())) {
+            return;
+        }
+        response.setAccountingPeriodName(journalHeader.getAccountingPeriod().getPeriodName());
+        if (journalHeader.getAccountingPeriod().getFiscalYear() != null
+                && org.hibernate.Hibernate.isInitialized(journalHeader.getAccountingPeriod().getFiscalYear())) {
+            response.setFiscalYearId(journalHeader.getAccountingPeriod().getFiscalYear().getId());
+            response.setFiscalYearName(journalHeader.getAccountingPeriod().getFiscalYear().getYearName());
+        }
+    }
+
+    @Mapping(target = "accountCode", ignore = true)
+    @Mapping(target = "accountName", ignore = true)
     JournalLineResponse toJournalLineResponse(JournalLine journalLine);
 
     @Named("mapJournalLines")

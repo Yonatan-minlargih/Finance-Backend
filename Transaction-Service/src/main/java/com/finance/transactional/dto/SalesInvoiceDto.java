@@ -26,4 +26,8 @@ public class SalesInvoiceDto {
     private String currency;
     private SalesInvoice.SalesInvoiceStatus status;
     private Boolean isMatched;
+    private BigDecimal paidAmount;
+    private BigDecimal outstandingAmount;
+    private UUID glJournalId;
+    private String glJournalNumber;
 }

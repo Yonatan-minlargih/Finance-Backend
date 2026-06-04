@@ -13,10 +13,12 @@ import org.mapstruct.MappingConstants;
 public interface PaymentMapper {
     @Mapping(source = "vendor.id", target = "vendorId")
     @Mapping(source = "bankAccount.id", target = "bankAccountId")
+    @Mapping(source = "invoice.id", target = "invoiceId")
     PaymentDto toDto(Payment entity);
 
     @Mapping(source = "vendorId", target = "vendor")
     @Mapping(source = "bankAccountId", target = "bankAccount")
+    @Mapping(target = "invoice", ignore = true)
     Payment toEntity(PaymentDto dto);
 
     default Vendor mapVendor(UUID id) {

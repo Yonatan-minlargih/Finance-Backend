@@ -14,6 +14,10 @@ public class FeignClientConfig implements RequestInterceptor {
     @Override
     public void apply(RequestTemplate requestTemplate) {
         requestTemplate.header("Authorization", securityUtil.getUserToken());
+        String tenantId = securityUtil.getTenantId();
+        if (tenantId != null && !tenantId.isBlank()) {
+            requestTemplate.header("X-Tenant-ID", tenantId);
+        }
     }
 }
 

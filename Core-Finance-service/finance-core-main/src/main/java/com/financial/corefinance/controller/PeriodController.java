@@ -136,6 +136,14 @@ public class PeriodController {
         return ResponseEntity.ok(toFiscalYearResponse(fiscalYearService.closeFiscalYear(fiscalYearId, user)));
     }
 
+    @PostMapping("/fiscal-years/{fiscalYearId}/open")
+    // @PreAuthorize("hasRole('FINANCE_MANAGER')")
+    @Operation(summary = "Open (reopen) fiscal year", description = "Opens a closed fiscal year")
+    public ResponseEntity<FiscalYearResponse> openFiscalYear(
+            @Parameter(description = "Fiscal year ID") @PathVariable UUID fiscalYearId) {
+        return ResponseEntity.ok(toFiscalYearResponse(fiscalYearService.openFiscalYear(fiscalYearId)));
+    }
+
     // Accounting Period Endpoints
     @PostMapping("/accounting-periods")
     // @PreAuthorize("hasRole('FINANCE_MANAGER')")
@@ -303,6 +311,9 @@ public class PeriodController {
         response.setUpdatedBy(period.getUpdatedBy());
         response.setVersion(period.getVersion());
         response.setFiscalYearId(period.getFiscalYearId());
+        if (period.getFiscalYear() != null) {
+            response.setFiscalYearName(period.getFiscalYear().getYearName());
+        }
         response.setPeriodNumber(period.getPeriodNumber());
         response.setPeriodName(period.getPeriodName());
         response.setStartDate(period.getStartDate());

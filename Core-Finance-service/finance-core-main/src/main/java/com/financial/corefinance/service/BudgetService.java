@@ -4,6 +4,7 @@ import com.financial.corefinance.domain.entity.Budget;
 import com.financial.corefinance.domain.entity.BudgetLine;
 import com.financial.corefinance.domain.entity.BudgetVersion;
 import com.financial.corefinance.domain.entity.BudgetChange;
+import com.financial.corefinance.dto.request.BudgetRequest;
 import com.financial.corefinance.exception.BudgetValidationException;
 import com.financial.corefinance.repository.*;
 import com.financial.corefinance.event.FinanceEventService;
@@ -86,6 +87,62 @@ public class BudgetService {
     }
 
     @Transactional
+    public Budget updateBudget(UUID budgetId, BudgetRequest request) {
+        Budget existing = budgetRepository.findById(budgetId)
+                .orElseThrow(() -> new BudgetValidationException("Budget not found: " + budgetId));
+
+        String tenantId = com.financial.corefinance.domain.base.TenantContext.getCurrentTenant();
+        if (request.getTenantId() != null && !tenantId.equals(request.getTenantId())) {
+            throw new BudgetValidationException("Tenant mismatch");
+        }
+        if (!tenantId.equals(existing.getTenantId())) {
+            throw new BudgetValidationException("Budget not found for tenant");
+        }
+
+        assertBudgetUnlocked(existing);
+
+        if (!fiscalYearRepository.existsById(request.getFiscalYearId())) {
+            throw new BudgetValidationException("Fiscal year not found: " + request.getFiscalYearId());
+        }
+
+        budgetRepository.findByTenantIdAndFiscalYearIdAndBudgetName(
+                        tenantId, request.getFiscalYearId(), request.getBudgetName())
+                .filter(other -> !other.getId().equals(budgetId))
+                .ifPresent(other -> {
+                    throw new BudgetValidationException(
+                            "Budget with name " + request.getBudgetName() + " already exists for this fiscal year");
+                });
+
+        existing.setFiscalYearId(request.getFiscalYearId());
+        existing.setBudgetName(request.getBudgetName());
+        existing.setDescription(request.getDescription());
+        existing.setDepartmentId(request.getDepartmentId());
+        if (request.getBudgetType() != null) {
+            existing.setBudgetType(request.getBudgetType());
+        }
+        if (request.getCurrencyCode() != null) {
+            existing.setCurrencyCode(request.getCurrencyCode());
+        }
+        if (request.getTotalBudgetAmount() != null) {
+            existing.setTotalBudgetAmount(request.getTotalBudgetAmount());
+        }
+        if (request.getApprovalRequired() != null) {
+            existing.setApprovalRequired(request.getApprovalRequired());
+        }
+        if (request.getEffectiveFrom() != null) {
+            existing.setEffectiveFrom(request.getEffectiveFrom());
+        }
+        if (request.getEffectiveTo() != null) {
+            existing.setEffectiveTo(request.getEffectiveTo());
+        }
+
+        Budget saved = budgetRepository.save(existing);
+        financeEventService.publishBudgetUpdatedEvent(saved.getId(), saved.getTenantId(), tenantId + "-user");
+        log.info("Budget updated successfully: {}", saved.getBudgetName());
+        return saved;
+    }
+
+    @Transactional
     public BudgetVersion createBudgetVersion(@Valid BudgetVersion budgetVersion) {
         log.info("Creating budget version: {} for budget: {}", 
                 budgetVersion.getVersionNumber(), budgetVersion.getBudgetId());
@@ -127,8 +184,39 @@ public class BudgetService {
         }
         
         BudgetVersion savedVersion = budgetVersionRepository.save(budgetVersion);
+        if (Boolean.TRUE.equals(savedVersion.getIsCurrent())) {
+            setCurrentBudgetVersion(savedVersion.getId());
+        } else if (Boolean.TRUE.equals(savedVersion.getIsBaseline())) {
+            setBaselineBudgetVersion(savedVersion.getId());
+        }
         log.info("Budget version created successfully: {}", savedVersion.getVersionNumber());
         return savedVersion;
+    }
+
+    @Transactional
+    public BudgetVersion updateBudgetVersion(UUID budgetVersionId, BudgetVersion updates) {
+        BudgetVersion version = budgetVersionRepository.findById(budgetVersionId)
+                .orElseThrow(() -> new BudgetValidationException("Budget version not found: " + budgetVersionId));
+        Budget budget = budgetRepository.findById(version.getBudgetId())
+                .orElseThrow(() -> new BudgetValidationException("Budget not found: " + version.getBudgetId()));
+        assertBudgetUnlocked(budget);
+
+        if (updates.getVersionName() != null) {
+            version.setVersionName(updates.getVersionName());
+        }
+        if (updates.getDescription() != null) {
+            version.setDescription(updates.getDescription());
+        }
+        if (updates.getTotalBudgetAmount() != null) {
+            version.setTotalBudgetAmount(updates.getTotalBudgetAmount());
+        }
+        if (updates.getEffectiveFrom() != null) {
+            version.setEffectiveFrom(updates.getEffectiveFrom());
+        }
+        if (updates.getEffectiveTo() != null) {
+            version.setEffectiveTo(updates.getEffectiveTo());
+        }
+        return budgetVersionRepository.save(version);
     }
 
     @Transactional
@@ -226,6 +314,8 @@ public class BudgetService {
                 } catch(NumberFormatException e) {
                     throw new BudgetValidationException("Invalid budget amount: " + amountStr);
                 }
+                budgetLine.setDepartmentId(budget.getDepartmentId());
+                budgetLine.setLineCategory(BudgetLine.LineCategory.BUDGET);
                 budgetLine.setNotes(notes);
                 
                 // Defaults
@@ -347,18 +437,56 @@ public class BudgetService {
         }
         
         BudgetVersion newCurrentVersion = versionOpt.get();
-        
-        // Clear current flag from all versions of this budget
-        List<BudgetVersion> allVersions = budgetVersionRepository.findByBudgetIdOrderByVersionNumberDesc(newCurrentVersion.getBudgetId());
+
+        if (newCurrentVersion.getStatus() != BudgetVersion.BudgetVersionStatus.APPROVED) {
+            throw new BudgetValidationException(
+                    "Only an APPROVED version can be set as current. Approve this version first.");
+        }
+
+        List<BudgetVersion> allVersions =
+                budgetVersionRepository.findByBudgetIdOrderByVersionNumberDesc(newCurrentVersion.getBudgetId());
         allVersions.forEach(version -> version.setIsCurrent(false));
         budgetVersionRepository.saveAll(allVersions);
-        
-        // Set new current version
+
         newCurrentVersion.setIsCurrent(true);
         BudgetVersion updatedVersion = budgetVersionRepository.save(newCurrentVersion);
-        
+
+        budgetRepository.findById(updatedVersion.getBudgetId()).ifPresent(b -> {
+            if (b.getStatus() == Budget.BudgetStatus.DRAFT || b.getStatus() == Budget.BudgetStatus.SUBMITTED) {
+                b.setStatus(Budget.BudgetStatus.ACTIVE);
+                budgetRepository.save(b);
+            }
+        });
+
         log.info("Current budget version set successfully: {}", updatedVersion.getVersionNumber());
         return updatedVersion;
+    }
+
+    /**
+     * Baseline = original approved plan kept for variance vs current working version.
+     * Only one baseline per budget; does not affect which version drives monitoring.
+     */
+    @Transactional
+    public BudgetVersion setBaselineBudgetVersion(UUID budgetVersionId) {
+        log.info("Setting baseline budget version: {}", budgetVersionId);
+
+        BudgetVersion version = budgetVersionRepository.findById(budgetVersionId)
+                .orElseThrow(() -> new BudgetValidationException("Budget version not found: " + budgetVersionId));
+
+        if (version.getStatus() != BudgetVersion.BudgetVersionStatus.APPROVED) {
+            throw new BudgetValidationException(
+                    "Only an APPROVED version can be marked as baseline. Approve this version first.");
+        }
+
+        List<BudgetVersion> allVersions =
+                budgetVersionRepository.findByBudgetIdOrderByVersionNumberDesc(version.getBudgetId());
+        allVersions.forEach(v -> v.setIsBaseline(false));
+        budgetVersionRepository.saveAll(allVersions);
+
+        version.setIsBaseline(true);
+        BudgetVersion updated = budgetVersionRepository.save(version);
+        log.info("Baseline budget version set: {}", updated.getVersionNumber());
+        return updated;
     }
 
     @Transactional
@@ -528,6 +656,19 @@ public class BudgetService {
             // Update budget totals
             updateBudgetMainTotals(budgetId, budgetLines);
         }
+    }
+
+    @Transactional
+    public void updateBudgetTotalsFromLines(UUID budgetId, List<BudgetLine> budgetLines) {
+        updateBudgetMainTotals(budgetId, budgetLines);
+        budgetVersionRepository.findByBudgetIdAndIsCurrentTrue(budgetId).ifPresent(current -> {
+            List<BudgetLine> versionLines = budgetLines.stream()
+                    .filter(l -> current.getId().equals(l.getBudgetVersionId()))
+                    .toList();
+            if (!versionLines.isEmpty()) {
+                updateBudgetVersionTotals(current.getId(), versionLines);
+            }
+        });
     }
 
     private void updateBudgetMainTotals(UUID budgetId, List<BudgetLine> budgetLines) {

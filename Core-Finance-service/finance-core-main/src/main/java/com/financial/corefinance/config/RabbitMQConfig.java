@@ -8,9 +8,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.support.converter.DefaultJackson2JavaTypeMapper;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Configuration
 @RequiredArgsConstructor
@@ -163,6 +167,34 @@ public class RabbitMQConfig {
     public Jackson2JsonMessageConverter jacksonConverter(ObjectMapper mapper) {
         Jackson2JsonMessageConverter converter = new Jackson2JsonMessageConverter(mapper);
         converter.setAlwaysConvertToInferredType(true);
+        DefaultJackson2JavaTypeMapper typeMapper = new DefaultJackson2JavaTypeMapper();
+        Map<String, Class<?>> idClassMapping = new HashMap<>();
+        idClassMapping.put(
+                "com.finance.transactional.dto.event.ApInvoiceApprovedEvent",
+                com.financial.corefinance.dto.event.ApInvoiceApprovedEvent.class);
+        idClassMapping.put(
+                "com.finance.transactional.dto.event.ApInvoiceGlPostResult",
+                com.financial.corefinance.dto.event.ApInvoiceGlPostResult.class);
+        idClassMapping.put(
+                "com.finance.transactional.dto.event.ArSalesInvoiceApprovedEvent",
+                com.financial.corefinance.dto.event.ArSalesInvoiceApprovedEvent.class);
+        idClassMapping.put(
+                "com.finance.transactional.dto.event.ArSalesInvoiceGlPostResult",
+                com.financial.corefinance.dto.event.ArSalesInvoiceGlPostResult.class);
+        idClassMapping.put(
+                "com.finance.transactional.dto.event.ArReceiptPostedEvent",
+                com.financial.corefinance.dto.event.ArReceiptPostedEvent.class);
+        idClassMapping.put(
+                "com.finance.transactional.dto.event.ArReceiptGlPostResult",
+                com.financial.corefinance.dto.event.ArReceiptGlPostResult.class);
+        idClassMapping.put(
+                "com.finance.transactional.dto.event.ApPaymentPostedEvent",
+                com.financial.corefinance.dto.event.ApPaymentPostedEvent.class);
+        idClassMapping.put(
+                "com.finance.transactional.dto.event.ApPaymentGlPostResult",
+                com.financial.corefinance.dto.event.ApPaymentGlPostResult.class);
+        typeMapper.setIdClassMapping(idClassMapping);
+        converter.setJavaTypeMapper(typeMapper);
         return converter;
     }
 

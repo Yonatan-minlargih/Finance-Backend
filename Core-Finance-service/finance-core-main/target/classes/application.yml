@@ -4,6 +4,8 @@ server:
 spring:
   application:
     name: core-finance-service
+  config:
+    import: optional:classpath:integration-gl-accounts.yml
   security:
     oauth2:
       resourceserver:
@@ -47,6 +49,8 @@ rabbitmq:
   paymentPostedQueue: payment-posted-queue
   salesInvoiceApprovedQueue: sales-invoice-approved-queue
   receiptPostedQueue: receipt-posted-queue
+  arWriteOffQueue: ar-write-off-queue
+  arInterestQueue: ar-interest-queue
 
 
 eureka:
@@ -77,6 +81,11 @@ services:
 
 integration:
   contract-version: ${INTEGRATION_CONTRACT_VERSION:v1}
+
+budget:
+  control:
+    overspend-mode: ${BUDGET_OVERSPEND_MODE:WARN}
+    warning-threshold-percent: ${BUDGET_WARNING_THRESHOLD:90}
 
 multitenancy:
   header: X-Tenant-ID
