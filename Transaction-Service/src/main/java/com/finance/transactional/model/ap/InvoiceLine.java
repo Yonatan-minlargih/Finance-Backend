@@ -40,4 +40,8 @@ public class InvoiceLine extends BaseTenantEntity {
 
     @Column(name = "account_id", length = 36)
     private String accountId; // GL Account ID from CoreFinance
+
+    /** Optional split allocation (e.g. 60 for 60%). Used with invoice total to derive line_amount. */
+    @Column(name = "allocation_percentage", precision = 7, scale = 4)
+    private BigDecimal allocationPercentage;
 }

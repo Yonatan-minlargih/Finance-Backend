@@ -33,6 +33,7 @@ public class PostingEngineService {
     private final NumberingSeriesRepository numberingSeriesRepository;
     private final AuditLogRepository auditLogRepository;
     private final BusinessValidationService businessValidationService;
+    private final BudgetMonitoringService budgetMonitoringService;
     private final ApprovalWorkflowRepository approvalWorkflowRepository;
     private final FinanceEventService financeEventService;
 
@@ -57,6 +58,7 @@ public class PostingEngineService {
 
         createAuditLog(savedJournal, AuditLog.AuditAction.POST, "Journal posted successfully");
         financeEventService.publishJournalPostedEvent(savedJournal.getId(), savedJournal.getTenantId(), savedJournal.getCreatedBy());
+        budgetMonitoringService.applyJournalToBudget(savedJournal);
 
         log.info("Journal posted successfully: {}", savedJournal.getJournalNumber());
         return savedJournal;
@@ -99,23 +101,20 @@ public class PostingEngineService {
     @Transactional
     public JournalHeader reverseJournal(@NotNull UUID originalJournalId, @NotNull String reversalReason) {
         log.info("Reversing journal with ID: {}", originalJournalId);
-        
-        JournalHeader originalJournal = journalHeaderRepository.findById(originalJournalId)
+
+        JournalHeader originalJournal = journalHeaderRepository.findByIdWithLines(originalJournalId)
             .orElseThrow(() -> new IllegalArgumentException("Original journal not found: " + originalJournalId));
-        
-        if (originalJournal.getStatus() != JournalHeader.JournalStatus.POSTED) {
-            throw new IllegalStateException("Only posted journals can be reversed. Current status: " + originalJournal.getStatus());
+
+        businessValidationService.validateJournalReversal(originalJournal, reversalReason);
+
+        if (originalJournal.getJournalLines() == null || originalJournal.getJournalLines().isEmpty()) {
+            throw new IllegalStateException("Cannot reverse journal with no lines");
         }
-        
-        if (originalJournal.getIsReversed()) {
-            throw new IllegalStateException("Journal has already been reversed");
-        }
-        
+
         JournalHeader reversalJournal = createReversalJournal(originalJournal, reversalReason);
         JournalHeader postedReversal = createAndPostJournal(reversalJournal);
 
         originalJournal.setIsReversed(true);
-        originalJournal.setStatus(JournalHeader.JournalStatus.REVERSED);
         originalJournal.setReversedBy(postedReversal.getCreatedBy());
         originalJournal.setReversedAt(LocalDateTime.now());
         originalJournal.setReversalReason(reversalReason);
@@ -233,7 +232,7 @@ public class PostingEngineService {
             .findByTenantIdAndSeriesCodeForUpdate(tenantId, seriesCode)
             .orElseThrow(() -> new IllegalArgumentException("Journal numbering series not configured"));
         
-        if (!numberingSeries.getIsActive()) {
+        if (!Boolean.TRUE.equals(numberingSeries.getIsActive())) {
             throw new IllegalArgumentException("Journal numbering series is not active");
         }
         
@@ -252,7 +251,7 @@ public class PostingEngineService {
         if (!period.getTenantId().equals(journalHeader.getTenantId())) {
             throw new IllegalArgumentException("Accounting period does not belong to tenant");
         }
-        if (!period.getIsOpen() || period.getIsClosed()) {
+        if (!Boolean.TRUE.equals(period.getIsOpen()) || Boolean.TRUE.equals(period.getIsClosed())) {
             throw new IllegalArgumentException("Accounting period is closed: " + period.getPeriodName());
         }
 
@@ -270,11 +269,14 @@ public class PostingEngineService {
             if (!account.getTenantId().equals(journalHeader.getTenantId())) {
                 throw new IllegalArgumentException("Account does not belong to tenant: " + account.getAccountCode());
             }
-            if (!account.getIsActive()) {
+            if (!Boolean.TRUE.equals(account.getIsActive())) {
                 throw new IllegalArgumentException("Account is not active: " + account.getAccountCode());
             }
 
-            if (!account.getAllowManualEntry()) {
+            boolean systemIntegration = journalHeader.getJournalType() == JournalHeader.JournalType.SYSTEM
+                    && journalHeader.getSourceSystem() != null
+                    && journalHeader.getSourceSystem().toUpperCase().contains("TRANSACTION");
+            if (!systemIntegration && !Boolean.TRUE.equals(account.getAllowManualEntry())) {
                 throw new IllegalArgumentException("Manual entry not allowed for account: " + account.getAccountCode());
             }
 
@@ -341,25 +343,26 @@ public class PostingEngineService {
         reversalJournal.setNarration("Reversal of journal: " + originalJournal.getJournalNumber());
         reversalJournal.setOriginalJournalId(originalJournal.getId());
         reversalJournal.setIsReversed(false);
-        
-        // Create reversal lines
+        reversalJournal.setJournalLines(new ArrayList<>());
+
         for (JournalLine originalLine : originalJournal.getJournalLines()) {
             JournalLine reversalLine = new JournalLine();
             reversalLine.setTenantId(originalLine.getTenantId());
             reversalLine.setAccountId(originalLine.getAccountId());
             reversalLine.setDescription("Reversal: " + originalLine.getDescription());
-            
-            // Swap debit and credit
+            reversalLine.setCurrencyCode(originalLine.getCurrencyCode());
+            reversalLine.setExchangeRate(originalLine.getExchangeRate());
+
             if (originalLine.getDebitAmount() != null && originalLine.getDebitAmount().compareTo(BigDecimal.ZERO) > 0) {
                 reversalLine.setCreditAmount(originalLine.getDebitAmount());
             }
             if (originalLine.getCreditAmount() != null && originalLine.getCreditAmount().compareTo(BigDecimal.ZERO) > 0) {
                 reversalLine.setDebitAmount(originalLine.getCreditAmount());
             }
-            
+
             reversalJournal.getJournalLines().add(reversalLine);
         }
-        
+
         return reversalJournal;
     }
 
@@ -383,6 +386,11 @@ public class PostingEngineService {
     public List<JournalHeader> getJournalsForPosting(String tenantId) {
         return journalHeaderRepository.findJournalsForPosting(
             tenantId, JournalHeader.JournalStatus.APPROVED, LocalDateTime.now().toLocalDate());
+    }
+
+    @Transactional(readOnly = true)
+    public List<JournalLine> getPostedLinesByAccount(String tenantId, java.util.UUID accountId) {
+        return journalLineRepository.findPostedLinesByAccount(tenantId, accountId);
     }
 
     public boolean validateJournalBalance(UUID journalId) {

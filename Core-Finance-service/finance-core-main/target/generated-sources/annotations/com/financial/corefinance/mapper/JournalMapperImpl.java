@@ -1,6 +1,5 @@
 package com.financial.corefinance.mapper;
 
-import com.financial.corefinance.domain.entity.Account;
 import com.financial.corefinance.domain.entity.JournalHeader;
 import com.financial.corefinance.domain.entity.JournalLine;
 import com.financial.corefinance.dto.request.JournalHeaderRequest;
@@ -10,15 +9,19 @@ import com.financial.corefinance.dto.response.JournalLineResponse;
 import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.processing.Generated;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-05-19T11:26:21+0300",
+    date = "2026-05-25T12:11:23+0300",
     comments = "version: 1.5.5.Final, compiler: Eclipse JDT (IDE) 3.46.0.v20260407-0427, environment: Java 21.0.10 (Eclipse Adoptium)"
 )
 @Component
 public class JournalMapperImpl implements JournalMapper {
+
+    @Autowired
+    private JournalLineAccountEnricher journalLineAccountEnricher;
 
     @Override
     public JournalHeader toJournalHeader(JournalHeaderRequest request) {
@@ -134,8 +137,6 @@ public class JournalMapperImpl implements JournalMapper {
 
         JournalLineResponse journalLineResponse = new JournalLineResponse();
 
-        journalLineResponse.setAccountCode( journalLineAccountAccountCode( journalLine ) );
-        journalLineResponse.setAccountName( journalLineAccountAccountName( journalLine ) );
         journalLineResponse.setAccountId( journalLine.getAccountId() );
         journalLineResponse.setAnalysisCode( journalLine.getAnalysisCode() );
         journalLineResponse.setCostCenterId( journalLine.getCostCenterId() );
@@ -168,6 +169,8 @@ public class JournalMapperImpl implements JournalMapper {
         journalLineResponse.setUpdatedAt( journalLine.getUpdatedAt() );
         journalLineResponse.setUpdatedBy( journalLine.getUpdatedBy() );
         journalLineResponse.setVersion( journalLine.getVersion() );
+
+        journalLineAccountEnricher.enrichAccountFields( journalLine, journalLineResponse );
 
         return journalLineResponse;
     }
@@ -234,36 +237,6 @@ public class JournalMapperImpl implements JournalMapper {
         journalHeader.setReferenceNumber( request.getReferenceNumber() );
         journalHeader.setReferenceType( request.getReferenceType() );
         journalHeader.setSourceSystem( request.getSourceSystem() );
-    }
-
-    private String journalLineAccountAccountCode(JournalLine journalLine) {
-        if ( journalLine == null ) {
-            return null;
-        }
-        Account account = journalLine.getAccount();
-        if ( account == null ) {
-            return null;
-        }
-        String accountCode = account.getAccountCode();
-        if ( accountCode == null ) {
-            return null;
-        }
-        return accountCode;
-    }
-
-    private String journalLineAccountAccountName(JournalLine journalLine) {
-        if ( journalLine == null ) {
-            return null;
-        }
-        Account account = journalLine.getAccount();
-        if ( account == null ) {
-            return null;
-        }
-        String accountName = account.getAccountName();
-        if ( accountName == null ) {
-            return null;
-        }
-        return accountName;
     }
 
     protected List<JournalLine> journalLineRequestListToJournalLineList(List<JournalLineRequest> list) {

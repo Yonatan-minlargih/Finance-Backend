@@ -1,0 +1,92 @@
+# Standard GL accounts used by automatic posting (AP, AR, Payroll, etc.).
+# Safe to edit names/IFRS labels; keep codes stable unless all integrations are updated.
+# Manual COA entries via the UI are unchanged — this file only defines system-required accounts.
+
+integration:
+  gl-accounts:
+    enabled: true
+    seed-on-startup: ${INTEGRATION_COA_SEED_ON_STARTUP:true}
+    base-currency: ${AP_BASE_CURRENCY:ETB}
+    # Comma-separated tenant IDs to seed on startup (empty = skip startup seed)
+    seed-tenants: ${INTEGRATION_COA_SEED_TENANTS:3fa85f64-5717-4562-b3fc-2c963f66afa6}
+    accounts:
+      ap-payable:
+        code: "2100"
+        name: "Accounts Payable"
+        accountType: LIABILITY
+        normalBalance: CREDIT
+        ifrsCategory: CURRENT_LIABILITIES
+        module: AP
+        description: "AP invoice accrual and payment settlement"
+      ap-expense-default:
+        code: "5100"
+        name: "Operating Expense"
+        accountType: EXPENSE
+        normalBalance: DEBIT
+        ifrsCategory: OPERATING_EXPENSES
+        module: AP
+        description: "Default AP invoice expense (distribution lines)"
+      ap-expense-alternate:
+        code: "6100"
+        name: "Operating Expense (Alternate)"
+        accountType: EXPENSE
+        normalBalance: DEBIT
+        ifrsCategory: OPERATING_EXPENSES
+        module: AP
+        description: "Secondary AP / payroll expense"
+      ap-vat-input:
+        code: "1150"
+        name: "VAT Input"
+        accountType: ASSET
+        normalBalance: DEBIT
+        ifrsCategory: CURRENT_ASSETS
+        module: AP
+        description: "Recoverable VAT on purchases"
+      ap-bank:
+        code: "1100"
+        name: "Cash and Bank"
+        accountType: ASSET
+        normalBalance: DEBIT
+        ifrsCategory: CURRENT_ASSETS
+        module: AP
+        description: "AP payments and bank settlements"
+      ar-receivable:
+        code: "1200"
+        name: "Accounts Receivable"
+        accountType: ASSET
+        normalBalance: DEBIT
+        ifrsCategory: CURRENT_ASSETS
+        module: AR
+        description: "AR sales invoices"
+      ar-revenue:
+        code: "4100"
+        name: "Sales Revenue"
+        accountType: REVENUE
+        normalBalance: CREDIT
+        ifrsCategory: REVENUE
+        module: AR
+        description: "AR sales revenue"
+      ar-bad-debt-expense:
+        code: "6200"
+        name: "Bad Debt Expense"
+        accountType: EXPENSE
+        normalBalance: DEBIT
+        ifrsCategory: OPERATING_EXPENSES
+        module: AR
+        description: "AR write-offs and uncollectible balances"
+      ar-interest-income:
+        code: "4200"
+        name: "Interest Income"
+        accountType: REVENUE
+        normalBalance: CREDIT
+        ifrsCategory: REVENUE
+        module: AR
+        description: "Late payment interest and penalties on receivables"
+      payroll-deductions:
+        code: "2200"
+        name: "Payroll Deductions Payable"
+        accountType: LIABILITY
+        normalBalance: CREDIT
+        ifrsCategory: CURRENT_LIABILITIES
+        module: PAYROLL
+        description: "Payroll withholdings payable"

@@ -20,4 +20,5 @@ public class InvoiceLineDto {
     private BigDecimal unitPrice;
     private BigDecimal lineAmount;
     private String accountId;
+    private BigDecimal allocationPercentage;
 }

@@ -23,6 +23,7 @@ public class VendorDto {
     private String vatNumber;
     private String bankAccountNumber;
     private String defaultCurrency;
+    private String defaultPaymentMethod;
     private String paymentTerms;
     private Boolean isActive;
     private String classification;

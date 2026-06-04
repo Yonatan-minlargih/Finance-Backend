@@ -8,6 +8,8 @@ import com.financial.corefinance.repository.BudgetChangeRepository;
 import com.financial.corefinance.repository.BudgetVersionRepository;
 import com.financial.corefinance.repository.BudgetLineRepository;
 import com.financial.corefinance.repository.AccountRepository;
+import com.financial.corefinance.dto.request.BudgetTransferRequest;
+import com.financial.corefinance.service.BudgetMonitoringService;
 import com.financial.corefinance.service.BudgetService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -30,6 +32,7 @@ import java.util.stream.Collectors;
 @Tag(name = "Budget Change Management", description = "APIs for modifying and tracking budget changes")
 public class BudgetChangeController {
     private final BudgetService budgetService;
+    private final BudgetMonitoringService budgetMonitoringService;
     private final BudgetChangeRepository budgetChangeRepository;
     private final BudgetVersionRepository budgetVersionRepository;
     private final BudgetLineRepository budgetLineRepository;
@@ -80,6 +83,17 @@ public class BudgetChangeController {
         
         BudgetChange approvedChange = budgetService.approveBudgetChange(budgetChangeId, approvedBy);
         return ResponseEntity.ok(toBudgetChangeResponse(approvedChange));
+    }
+
+    @PostMapping("/transfer")
+    @Operation(summary = "Transfer between budget lines", description = "Moves budget from one department/line to another with paired audit entries")
+    public ResponseEntity<List<BudgetChangeResponse>> transferBudget(@Valid @RequestBody BudgetTransferRequest request) {
+        String requestedBy = TenantContext.getCurrentTenant() + " Admin";
+        List<BudgetChange> changes = budgetMonitoringService.createBudgetTransfer(request, requestedBy);
+        List<BudgetChangeResponse> responses = changes.stream()
+                .map(this::toBudgetChangeResponse)
+                .collect(Collectors.toList());
+        return ResponseEntity.status(HttpStatus.CREATED).body(responses);
     }
 
     @PostMapping("/{budgetChangeId}/reject")

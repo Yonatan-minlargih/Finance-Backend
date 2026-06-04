@@ -1,6 +1,7 @@
 package com.finance.transactional.model.ap;
 
 import com.finance.transactional.model.BaseTenantEntity;
+import com.finance.transactional.model.ap.Invoice;
 import com.finance.transactional.model.banking.BankAccount;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -39,11 +40,24 @@ public class Payment extends BaseTenantEntity {
     @JoinColumn(name = "bank_account_id")
     private BankAccount bankAccount;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "invoice_id")
+    private Invoice invoice;
+
     @Column(name = "payment_date", nullable = false)
     private LocalDate paymentDate;
 
     @Column(name = "amount", precision = 15, scale = 2)
     private BigDecimal amount;
+
+    @Column(name = "foreign_amount", precision = 15, scale = 2)
+    private BigDecimal foreignAmount;
+
+    @Column(name = "currency", length = 3)
+    private String currency;
+
+    @Column(name = "exchange_rate", precision = 19, scale = 8)
+    private BigDecimal exchangeRate;
 
     @Column(name = "payment_method", length = 50)
     private String paymentMethod; // e.g. WIRE, CHEQUE, CASH

@@ -24,8 +24,17 @@ public interface FiscalYearRepository extends JpaRepository<FiscalYear, UUID> {
 
     List<FiscalYear> findByTenantIdAndIsClosedFalse(String tenantId);
 
-    @Query("SELECT fy FROM FiscalYear fy WHERE fy.tenantId = :tenantId AND :date BETWEEN fy.startDate AND fy.endDate")
-    Optional<FiscalYear> findFiscalYearForDate(@Param("tenantId") String tenantId, @Param("date") LocalDate date);
+    /**
+     * Multiple fiscal years may overlap for a date (e.g. during migration). Prefer current year, then latest year number.
+     */
+    @Query("SELECT fy FROM FiscalYear fy WHERE fy.tenantId = :tenantId AND :date BETWEEN fy.startDate AND fy.endDate " +
+           "ORDER BY CASE WHEN fy.isCurrent = true THEN 0 ELSE 1 END, fy.yearNumber DESC")
+    List<FiscalYear> findAllFiscalYearsForDate(@Param("tenantId") String tenantId, @Param("date") LocalDate date);
+
+    default Optional<FiscalYear> findFiscalYearForDate(String tenantId, LocalDate date) {
+        List<FiscalYear> matches = findAllFiscalYearsForDate(tenantId, date);
+        return matches.isEmpty() ? Optional.empty() : Optional.of(matches.getFirst());
+    }
 
     @Query("SELECT fy FROM FiscalYear fy WHERE fy.tenantId = :tenantId AND fy.isCurrent = true")
     Optional<FiscalYear> findCurrentFiscalYear(@Param("tenantId") String tenantId);

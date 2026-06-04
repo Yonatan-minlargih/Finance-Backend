@@ -54,6 +54,12 @@ public class SalesInvoice extends BaseTenantEntity {
     @Column(name = "is_matched")
     private Boolean isMatched = false;
 
+    @Column(name = "gl_journal_id")
+    private java.util.UUID glJournalId;
+
+    @Column(name = "gl_journal_number", length = 50)
+    private String glJournalNumber;
+
     public enum SalesInvoiceStatus {
         DRAFT, ISSUED, PAID, PARTIALLY_PAID, CANCELLED, ON_HOLD
     }

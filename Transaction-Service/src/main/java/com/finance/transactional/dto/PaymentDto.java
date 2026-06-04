@@ -19,8 +19,12 @@ public class PaymentDto {
     private String paymentNumber;
     private UUID vendorId;
     private UUID bankAccountId;
+    private UUID invoiceId;
     private LocalDate paymentDate;
     private BigDecimal amount;
+    private BigDecimal foreignAmount;
+    private String currency;
+    private BigDecimal exchangeRate;
     private String paymentMethod;
     private String referenceNumber;
     private List<PaymentAllocationDto> allocations;

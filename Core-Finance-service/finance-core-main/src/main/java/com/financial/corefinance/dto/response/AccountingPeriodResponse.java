@@ -15,6 +15,7 @@ public class AccountingPeriodResponse {
     private String updatedBy;
     private Long version;
     private UUID fiscalYearId;
+    private String fiscalYearName;
     private Integer periodNumber;
     private String periodName;
     private LocalDate startDate;

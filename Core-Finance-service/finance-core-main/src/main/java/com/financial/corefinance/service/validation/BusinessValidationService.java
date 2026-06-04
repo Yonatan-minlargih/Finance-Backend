@@ -2,6 +2,7 @@ package com.financial.corefinance.service.validation;
 
 import com.financial.corefinance.domain.entity.*;
 import com.financial.corefinance.exception.*;
+import com.financial.corefinance.service.BudgetMonitoringService;
 import com.financial.corefinance.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +25,7 @@ public class BusinessValidationService {
     private final BudgetLineRepository budgetLineRepository;
     private final AccountingPeriodRepository accountingPeriodRepository;
     private final FiscalYearRepository fiscalYearRepository;
+    private final BudgetMonitoringService budgetMonitoringService;
 
     public void validateJournalForPosting(JournalHeader journalHeader) {
         log.debug("Validating journal for posting: {}", journalHeader.getDescription());
@@ -135,7 +137,7 @@ public class BusinessValidationService {
         
         AccountingPeriod period = periodOpt.get();
         
-        if (!period.getIsOpen() || period.getIsClosed()) {
+        if (!Boolean.TRUE.equals(period.getIsOpen()) || Boolean.TRUE.equals(period.getIsClosed())) {
             throw new JournalPostingException("Accounting period is closed: " + period.getPeriodName());
         }
         
@@ -147,7 +149,7 @@ public class BusinessValidationService {
         
         // Check if fiscal year is closed
         Optional<FiscalYear> fiscalYearOpt = fiscalYearRepository.findById(period.getFiscalYearId());
-        if (fiscalYearOpt.isPresent() && fiscalYearOpt.get().getIsClosed()) {
+        if (fiscalYearOpt.isPresent() && Boolean.TRUE.equals(fiscalYearOpt.get().getIsClosed())) {
             throw new JournalPostingException("Cannot post to closed fiscal year");
         }
     }
@@ -161,11 +163,16 @@ public class BusinessValidationService {
             
             Account account = accountOpt.get();
             
-            if (!account.getIsActive()) {
+            if (!Boolean.TRUE.equals(account.getIsActive())) {
                 throw new JournalPostingException("Account is not active: " + account.getAccountCode());
             }
-            
-            if (!account.getAllowManualEntry() && journalHeader.getJournalType() == JournalHeader.JournalType.MANUAL) {
+
+            boolean systemIntegration = journalHeader.getJournalType() == JournalHeader.JournalType.SYSTEM
+                    && journalHeader.getSourceSystem() != null
+                    && journalHeader.getSourceSystem().toUpperCase().contains("TRANSACTION");
+            if (!systemIntegration
+                    && !Boolean.TRUE.equals(account.getAllowManualEntry())
+                    && journalHeader.getJournalType() == JournalHeader.JournalType.MANUAL) {
                 throw new JournalPostingException("Manual entry not allowed for account: " + account.getAccountCode());
             }
             
@@ -237,29 +244,7 @@ public class BusinessValidationService {
     }
 
     private void validateJournalAgainstBudget(JournalHeader journalHeader) {
-        // Check budget constraints for expense accounts
-        for (JournalLine line : journalHeader.getJournalLines()) {
-            Optional<Account> accountOpt = accountRepository.findById(line.getAccountId());
-            if (accountOpt.isPresent()) {
-                Account account = accountOpt.get();
-                
-                // Check budget for expense accounts
-                if (account.getAccountType() == Account.AccountType.EXPENSE && line.getDebitAmount() != null) {
-                    List<BudgetLine> budgetLines = budgetLineRepository.findByTenantIdAndAccountId(
-                        journalHeader.getTenantId(), line.getAccountId());
-                    
-                    for (BudgetLine budgetLine : budgetLines) {
-                        if (budgetLine.getAvailableAmount() != null && 
-                            line.getDebitAmount().compareTo(budgetLine.getAvailableAmount()) > 0) {
-                            
-                            // Only warn for budget overruns, don't block
-                            log.warn("Budget warning: Journal line amount {} exceeds available budget {} for account {}", 
-                                    line.getDebitAmount(), budgetLine.getAvailableAmount(), account.getAccountCode());
-                        }
-                    }
-                }
-            }
-        }
+        budgetMonitoringService.validateJournalBudget(journalHeader);
     }
 
     private void validateAccountBasicRules(Account account) {
@@ -304,7 +289,7 @@ public class BusinessValidationService {
             Account parentAccount = parentAccountOpt.get();
             
             // Validate parent is active
-            if (!parentAccount.getIsActive()) {
+            if (!Boolean.TRUE.equals(parentAccount.getIsActive())) {
                 throw new AccountValidationException("Parent account is not active: " + parentAccount.getAccountCode());
             }
             

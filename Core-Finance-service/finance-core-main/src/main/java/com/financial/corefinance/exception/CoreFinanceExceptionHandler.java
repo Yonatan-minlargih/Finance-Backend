@@ -9,10 +9,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
+import org.springframework.http.converter.HttpMessageConversionException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolation;
@@ -211,25 +216,111 @@ public class CoreFinanceExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
     }
 
+    @ApiResponse(responseCode = "400", description = "Bad Request")
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorResponse> handleMissingServletRequestParameter(
+            MissingServletRequestParameterException ex, WebRequest request) {
+        log.warn("Missing request parameter: {}", ex.getMessage());
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+            .timestamp(LocalDateTime.now())
+            .status(HttpStatus.BAD_REQUEST.value())
+            .error("Bad Request")
+            .message("Required parameter missing: " + ex.getParameterName())
+            .path(extractPath(request))
+            .build();
+
+        return ResponseEntity.badRequest().body(errorResponse);
+    }
+
+    @ApiResponse(responseCode = "400", description = "Bad Request")
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatch(
+            MethodArgumentTypeMismatchException ex, WebRequest request) {
+        log.warn("Argument type mismatch: {}", ex.getMessage());
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+            .timestamp(LocalDateTime.now())
+            .status(HttpStatus.BAD_REQUEST.value())
+            .error("Bad Request")
+            .message("Invalid value for parameter: " + ex.getName())
+            .path(extractPath(request))
+            .build();
+
+        return ResponseEntity.badRequest().body(errorResponse);
+    }
+
+    @ApiResponse(responseCode = "409", description = "Conflict")
+    @ExceptionHandler(IncorrectResultSizeDataAccessException.class)
+    public ResponseEntity<ErrorResponse> handleIncorrectResultSize(
+            IncorrectResultSizeDataAccessException ex, WebRequest request) {
+        log.warn("Non-unique query result: {}", ex.getMessage());
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+            .timestamp(LocalDateTime.now())
+            .status(HttpStatus.CONFLICT.value())
+            .error("Ambiguous Data")
+            .message("Multiple matching records were found where only one was expected. Review fiscal years and accounting periods for overlapping date ranges.")
+            .path(extractPath(request))
+            .build();
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+
+    @ApiResponse(responseCode = "500", description = "Internal Server Error")
+    @ExceptionHandler(HttpMessageConversionException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageConversion(
+            HttpMessageConversionException ex, WebRequest request) {
+        log.error("HTTP message conversion error: {}", ex.getMessage(), ex);
+
+        String message = resolveRootCauseMessage(ex);
+        ErrorResponse errorResponse = ErrorResponse.builder()
+            .timestamp(LocalDateTime.now())
+            .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+            .error("Response Serialization Failed")
+            .message(message)
+            .path(extractPath(request))
+            .build();
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+    }
+
     @ApiResponse(responseCode = "500", description = "Internal Server Error")
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex, WebRequest request) {
         log.error("Unexpected error occurred: {}", ex.getMessage(), ex);
-        
+
+        String message = resolveRootCauseMessage(ex);
         ErrorResponse errorResponse = ErrorResponse.builder()
             .timestamp(LocalDateTime.now())
             .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
             .error("Internal Server Error")
-            .message("An unexpected error occurred. Please try again later.")
-            .path(request.getDescription(false).replace("uri=", ""))
+            .message(message)
+            .path(extractPath(request))
             .build();
-        
+
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
 
+    private String extractPath(WebRequest request) {
+        if (request instanceof ServletWebRequest servletWebRequest) {
+            return servletWebRequest.getRequest().getRequestURI();
+        }
+        return request.getDescription(false).replace("uri=", "");
+    }
+
     private String getCurrentPath(Exception ex) {
-        // This would need to be implemented to extract the request path
-        // For now, returning a placeholder
         return "/api/v1/*";
+    }
+
+    private String resolveRootCauseMessage(Throwable ex) {
+        Throwable root = ex;
+        while (root.getCause() != null && root.getCause() != root) {
+            root = root.getCause();
+        }
+        if (root.getMessage() != null && !root.getMessage().isBlank()) {
+            return root.getMessage();
+        }
+        return ex.getMessage() != null ? ex.getMessage() : "An unexpected error occurred. Please try again later.";
     }
 }

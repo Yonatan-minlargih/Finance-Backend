@@ -171,12 +171,11 @@ public class BudgetController {
             @Valid @RequestBody BudgetRequest request) {
         log.info("Updating budget with ID: {}", budgetId);
 
-        if (!budgetRepository.existsById(budgetId)) {
-            return ResponseEntity.notFound().build();
+        String tenantId = com.financial.corefinance.domain.base.TenantContext.getCurrentTenant();
+        if (request.getTenantId() == null || request.getTenantId().isBlank()) {
+            request.setTenantId(tenantId);
         }
-        Budget budget = toBudgetEntity(request);
-        budget.setId(budgetId);
-        Budget updatedBudget = budgetRepository.save(budget);
+        Budget updatedBudget = budgetService.updateBudget(budgetId, request);
         return ResponseEntity.ok(toBudgetResponse(updatedBudget));
     }
     @PostMapping("/{budgetId}/approve")
@@ -191,12 +190,8 @@ public class BudgetController {
             return ResponseEntity.notFound().build();
         }
 
-        Budget budget = budgetOpt.get();
-        budget.setStatus(Budget.BudgetStatus.APPROVED);
-        budget.setApprovedAt(java.time.LocalDate.now());
-        // budget.setApprovedBy(getCurrentUser()); // Would need to implement
-
-        Budget updatedBudget = budgetRepository.save(budget);
+        String approvedBy = com.financial.corefinance.domain.base.TenantContext.getCurrentTenant() + " Admin";
+        Budget updatedBudget = budgetService.approveBudget(budgetId, approvedBy);
         return ResponseEntity.ok(toBudgetResponse(updatedBudget));
     }
 
@@ -360,6 +355,8 @@ public class BudgetController {
                 .budgetPeriodType(line.getBudgetPeriodType())
                 .spreadMethod(line.getSpreadMethod())
                 .notes(line.getNotes())
+                .lineCategory(line.getLineCategory() != null ? line.getLineCategory().name() : null)
+                .priorYearActualAmount(line.getPriorYearActualAmount())
                 .lastUpdatedAt(line.getLastUpdatedAt())
                 .build();
         if (line.getAccountId() != null) {

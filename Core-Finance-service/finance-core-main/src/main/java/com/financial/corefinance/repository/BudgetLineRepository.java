@@ -1,6 +1,7 @@
 package com.financial.corefinance.repository;
 
 import com.financial.corefinance.domain.entity.BudgetLine;
+import com.financial.corefinance.domain.entity.BudgetLine.LineCategory;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -48,4 +49,41 @@ public interface BudgetLineRepository extends JpaRepository<BudgetLine, UUID> {
 
     @Query("SELECT COUNT(bl) FROM BudgetLine bl WHERE bl.tenantId = :tenantId AND bl.budgetId = :budgetId")
     long countByTenantIdAndBudgetId(@Param("tenantId") String tenantId, @Param("budgetId") UUID budgetId);
+
+    @Query("SELECT bl FROM BudgetLine bl JOIN Budget b ON bl.budgetId = b.id "
+            + "WHERE bl.tenantId = :tenantId AND b.fiscalYearId = :fiscalYearId "
+            + "AND bl.lineCategory = :lineCategory ORDER BY bl.periodNumber")
+    List<BudgetLine> findForecastsByFiscalYear(
+            @Param("tenantId") String tenantId,
+            @Param("fiscalYearId") UUID fiscalYearId,
+            @Param("lineCategory") LineCategory lineCategory);
+
+    @Query("SELECT bl FROM BudgetLine bl WHERE bl.budgetId = :budgetId "
+            + "AND (bl.lineCategory = :lineCategory OR bl.lineCategory IS NULL)")
+    List<BudgetLine> findByBudgetIdAndLineCategory(
+            @Param("budgetId") UUID budgetId, @Param("lineCategory") LineCategory lineCategory);
+
+    @Query("SELECT bl FROM BudgetLine bl WHERE bl.budgetVersionId = :budgetVersionId "
+            + "AND (bl.lineCategory = :lineCategory OR bl.lineCategory IS NULL)")
+    List<BudgetLine> findByBudgetVersionIdAndLineCategory(
+            @Param("budgetVersionId") UUID budgetVersionId, @Param("lineCategory") LineCategory lineCategory);
+
+    /**
+     * Budget lines on the current approved version only (used when posting journals to GL).
+     */
+    @Query("SELECT bl FROM BudgetLine bl JOIN Budget b ON bl.budgetId = b.id "
+            + "JOIN BudgetVersion bv ON bl.budgetVersionId = bv.id "
+            + "WHERE bl.tenantId = :tenantId AND b.fiscalYearId = :fiscalYearId AND bl.accountId = :accountId "
+            + "AND bv.isCurrent = true "
+            + "AND (bl.lineCategory = 'BUDGET' OR bl.lineCategory IS NULL)")
+    List<BudgetLine> findCurrentBudgetLinesForFiscalYearAccount(
+            @Param("tenantId") String tenantId,
+            @Param("fiscalYearId") UUID fiscalYearId,
+            @Param("accountId") UUID accountId);
+
+    @Query("SELECT bl FROM BudgetLine bl JOIN Budget b ON bl.budgetId = b.id "
+            + "WHERE bl.tenantId = :tenantId AND b.fiscalYearId = :fiscalYearId "
+            + "AND (bl.lineCategory = 'BUDGET' OR bl.lineCategory IS NULL)")
+    List<BudgetLine> findAllBudgetLinesForFiscalYear(
+            @Param("tenantId") String tenantId, @Param("fiscalYearId") UUID fiscalYearId);
 }

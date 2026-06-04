@@ -3,6 +3,8 @@ package com.financial.corefinance.domain.entity;
 import com.financial.corefinance.domain.base.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import org.hibernate.annotations.NotFound;
+import org.hibernate.annotations.NotFoundAction;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -47,6 +49,7 @@ public class JournalLine extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id", insertable = false, updatable = false)
+    @NotFound(action = NotFoundAction.IGNORE)
     private Account account;
 
     @Column(name = "debit_amount", precision = 19, scale = 4)

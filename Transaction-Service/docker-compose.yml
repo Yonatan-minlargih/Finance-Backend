@@ -17,7 +17,7 @@ services:
       - TRANSACTIONAL_SECURITY_ENABLED=false
       - CORE_FINANCE_ENABLED=false
       - RABBITMQ_DYNAMIC=false
-      - CORE_FINANCE_URL=http://core-finance-service:8081
+      - CORE_FINANCE_URL=http://core-finance-service:8080
     depends_on:
       transactional-db:
         condition: service_healthy

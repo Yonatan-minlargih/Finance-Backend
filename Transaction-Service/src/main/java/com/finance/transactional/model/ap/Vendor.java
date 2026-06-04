@@ -50,6 +50,9 @@ public class Vendor extends BaseTenantEntity {
     @Column(name = "default_currency", length = 10)
     private String defaultCurrency = "ETB";
 
+    @Column(name = "default_payment_method", length = 50)
+    private String defaultPaymentMethod = "Bank Transfer";
+
     @Column(name = "payment_terms", length = 100)
     private String paymentTerms;
 

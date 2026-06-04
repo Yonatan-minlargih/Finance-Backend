@@ -82,6 +82,8 @@ services:
       - "${TRANSACTION_SERVICE_PORT}:8080"
     env_file:
       - .env
+    environment:
+      - CORE_FINANCE_URL=http://core-finance-service:8080
     depends_on:
       - mysql
       - rabbitmq

@@ -1,14 +1,18 @@
 package com.finance.transactional.service;
 
+import com.finance.transactional.client.NumberingSeriesClient;
 import com.finance.transactional.dto.VendorDto;
+import com.finance.transactional.exception.DuplicateVendorException;
 import com.finance.transactional.exception.ResourceNotFoundException;
 import com.finance.transactional.model.ap.Vendor;
 import com.finance.transactional.event.DomainEventPublisher;
 import com.finance.transactional.mapper.VendorMapper;
 import com.finance.transactional.repository.VendorRepository;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,16 +21,33 @@ import com.finance.transactional.dto.VendorAddressDto;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class VendorService {
 
     private final VendorRepository repository;
     private final VendorMapper mapper;
     private final DomainEventPublisher domainEventPublisher;
+    private final NumberingSeriesClient numberingSeriesClient;
 
     @Transactional
     public VendorDto createVendor(UUID tenantId, VendorDto dto) {
+        assertVendorIsUnique(tenantId, null, dto);
+
         Vendor vendor = mapper.toEntity(dto);
         vendor.setTenantId(tenantId);
+
+        // Auto-generate vendor code if not provided (Requirement #7)
+        if (vendor.getVendorCode() == null || vendor.getVendorCode().isBlank()) {
+            try {
+                Map<String, String> result = numberingSeriesClient.getNextNumber("VENDOR");
+                vendor.setVendorCode(result.get("nextNumber"));
+                log.info("Auto-assigned vendor code: {}", vendor.getVendorCode());
+            } catch (Exception e) {
+                log.warn("Failed to fetch next vendor code from Core-Finance: {}", e.getMessage());
+                // Fallback or handle appropriately
+            }
+        }
+
         if (vendor.getAddresses() != null) {
             vendor.getAddresses().forEach(addr -> {
                 addr.setVendor(vendor);
@@ -45,6 +66,7 @@ public class VendorService {
     @Transactional
     public VendorDto updateVendor(UUID tenantId, UUID id, VendorDto dto) {
         Vendor existing = getExistingVendor(tenantId, id);
+        assertVendorIsUnique(tenantId, id, dto);
         existing.setVendorCode(dto.getVendorCode());
         existing.setVendorName(dto.getVendorName());
         existing.setTaxId(dto.getTaxId());
@@ -103,5 +125,50 @@ public class VendorService {
     private Vendor getExistingVendor(UUID tenantId, UUID id) {
         return repository.findByTenantIdAndId(tenantId, id)
                 .orElseThrow(() -> new ResourceNotFoundException("Vendor not found with id " + id));
+    }
+
+    /**
+     * Blocks duplicate vendor code, tax ID, or same vendor name + tax ID for the tenant.
+     */
+    private void assertVendorIsUnique(UUID tenantId, UUID excludeId, VendorDto dto) {
+        String vendorCode = normalize(dto.getVendorCode());
+        String taxId = normalize(dto.getTaxId());
+        String vendorName = normalize(dto.getVendorName());
+
+        if (vendorCode != null) {
+            boolean codeTaken = excludeId == null
+                    ? repository.existsByTenantIdAndVendorCodeIgnoreCase(tenantId, vendorCode)
+                    : repository.existsByTenantIdAndVendorCodeIgnoreCaseAndIdNot(tenantId, vendorCode, excludeId);
+            if (codeTaken) {
+                throw new DuplicateVendorException();
+            }
+        }
+
+        if (taxId != null) {
+            boolean taxTaken = excludeId == null
+                    ? repository.existsByTenantIdAndTaxIdIgnoreCase(tenantId, taxId)
+                    : repository.existsByTenantIdAndTaxIdIgnoreCaseAndIdNot(tenantId, taxId, excludeId);
+            if (taxTaken) {
+                throw new DuplicateVendorException();
+            }
+        }
+
+        if (vendorName != null && taxId != null) {
+            boolean nameAndTaxTaken = excludeId == null
+                    ? repository.existsByTenantIdAndVendorNameAndTaxId(tenantId, vendorName, taxId)
+                    : repository.existsByTenantIdAndVendorNameAndTaxIdAndIdNot(
+                            tenantId, vendorName, taxId, excludeId);
+            if (nameAndTaxTaken) {
+                throw new DuplicateVendorException();
+            }
+        }
+    }
+
+    private static String normalize(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

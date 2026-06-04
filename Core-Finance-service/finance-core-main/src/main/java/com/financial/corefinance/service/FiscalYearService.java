@@ -174,6 +174,30 @@ public class FiscalYearService {
     }
 
     @Transactional
+    public FiscalYear openFiscalYear(UUID fiscalYearId) {
+        log.info("Opening (reopening) fiscal year: {}", fiscalYearId);
+        
+        Optional<FiscalYear> fiscalYearOpt = fiscalYearRepository.findById(fiscalYearId);
+        if (fiscalYearOpt.isEmpty()) {
+            throw new AccountValidationException("Fiscal year not found: " + fiscalYearId);
+        }
+        
+        FiscalYear fiscalYear = fiscalYearOpt.get();
+        
+        if (!fiscalYear.getIsClosed()) {
+            throw new AccountValidationException("Fiscal year is not closed");
+        }
+        
+        fiscalYear.setIsClosed(false);
+        fiscalYear.setClosedAt(null);
+        fiscalYear.setClosedBy(null);
+        
+        FiscalYear updatedFiscalYear = fiscalYearRepository.save(fiscalYear);
+        log.info("Fiscal year opened successfully: {}", updatedFiscalYear.getYearNumber());
+        return updatedFiscalYear;
+    }
+
+    @Transactional
     public AccountingPeriod closeAccountingPeriod(UUID periodId, String closedBy) {
         log.info("Closing accounting period: {}", periodId);
         

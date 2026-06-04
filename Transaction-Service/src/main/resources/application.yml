@@ -56,6 +56,8 @@ spring:
       sales-invoice-approved-queue: sales-invoice-approved-queue
       receipt-created-queue: receipt-created-queue
       receipt-posted-queue: receipt-posted-queue
+      ar-write-off-queue: ar-write-off-queue
+      ar-interest-queue: ar-interest-queue
       purchase-order-created-queue: purchase-order-created-queue
       vendor-created-queue: vendor-created-queue
       customer-created-queue: customer-created-queue
@@ -70,6 +72,10 @@ spring:
           jwk-set-uri: ${KEYCLOAK_JWK_SET_URI}
           audiences: ${KEYCLOAK_AUDIENCES}
 
+ar:
+  aging:
+    default-bucket-days: "30,60,90,120"
+
 eureka:
   client:
     enabled: ${EUREKA_CLIENT_ENABLED:false}
@@ -80,7 +86,12 @@ transactional:
 
 core-finance:
   enabled: ${CORE_FINANCE_ENABLED:false}
-  url: ${CORE_FINANCE_URL:http://localhost:8081}
+  url: ${CORE_FINANCE_URL:http://localhost:8084}
+
+ap:
+  base-currency: ${AP_BASE_CURRENCY:ETB}
+  invoice-gl:
+    reply-timeout-ms: ${AP_INVOICE_GL_REPLY_TIMEOUT_MS:45000}
 
 keycloak:
   server-url: ${KEYCLOAK_SERVER_URL}

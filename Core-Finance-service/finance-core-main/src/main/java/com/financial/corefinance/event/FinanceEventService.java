@@ -264,12 +264,10 @@ public class FinanceEventService {
     // Specific Event Handlers
     private void handleJournalPosted(FinanceEventDto event) {
         log.info("Journal posted event processed for entity: {}", event.getEntityId());
-        // Could trigger notifications, cache updates, etc.
     }
 
     private void handleJournalReversed(FinanceEventDto event) {
         log.info("Journal reversed event processed for entity: {}", event.getEntityId());
-        // Could trigger notifications, cache updates, etc.
     }
 
     private void handleJournalUpdated(FinanceEventDto event) {

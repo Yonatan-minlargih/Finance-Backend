@@ -1,5 +1,7 @@
 package com.finance.transactional.controller;
 
+import com.finance.transactional.dto.ArInterestRequest;
+import com.finance.transactional.dto.ArWriteOffRequest;
 import com.finance.transactional.dto.SalesInvoiceDto;
 import com.finance.transactional.service.SalesInvoiceService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -73,15 +75,19 @@ public class SalesInvoiceController {
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
-    @GetMapping("/aging")
-    public ResponseEntity<?> getAgingAnalysis(
+    @PostMapping("/write-off/{id}")
+    public ResponseEntity<SalesInvoiceDto> writeOff(
             @PathVariable UUID tenantId,
-            @RequestParam(required = false) java.time.LocalDate asOfDate) {
-        
-        if (asOfDate == null) {
-            asOfDate = java.time.LocalDate.now();
-        }
-        java.util.Map<String, java.math.BigDecimal> response = service.getAgingAnalysis(tenantId, asOfDate);
-        return ResponseEntity.status(HttpStatus.OK).body(response);
+            @PathVariable UUID id,
+            @Valid @RequestBody ArWriteOffRequest request) {
+        return ResponseEntity.ok(service.writeOff(tenantId, id, request));
+    }
+
+    @PostMapping("/interest/{id}")
+    public ResponseEntity<SalesInvoiceDto> applyInterest(
+            @PathVariable UUID tenantId,
+            @PathVariable UUID id,
+            @Valid @RequestBody ArInterestRequest request) {
+        return ResponseEntity.ok(service.applyInterest(tenantId, id, request));
     }
 }

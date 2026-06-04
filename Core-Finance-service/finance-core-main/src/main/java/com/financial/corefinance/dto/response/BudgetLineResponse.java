@@ -34,5 +34,7 @@ public class BudgetLineResponse {
     private String budgetPeriodType;
     private String spreadMethod;
     private String notes;
+    private String lineCategory;
+    private BigDecimal priorYearActualAmount;
     private LocalDate lastUpdatedAt;
 }
